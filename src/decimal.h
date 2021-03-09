@@ -35,6 +35,12 @@ class Decimal {
   explicit Decimal(const NativeType &value) : value_(value) {}
 
   /**
+   * Copy Constructor
+   * @param orig The original Decimal to copy into this new object
+   */
+  explicit Decimal(const Decimal &orig) : value_(orig.value_) {}
+
+  /**
    * Empty constructor.
    */
   Decimal() = default;
