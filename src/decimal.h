@@ -4,12 +4,7 @@ using int128_t = __int128;
 using uint128_t = unsigned __int128;
 using hash_t = uint64_t;
 
-
-//===----------------------------------------------------------------------===//
-//
-// Fixed point decimals
-//
-//===----------------------------------------------------------------------===//
+namespace libfixeypointy {
 
 /**
  * A generic fixed point decimal value. This only serves as a storage container for decimals of various sizes.
@@ -38,7 +33,7 @@ class Decimal {
    * Copy Constructor
    * @param orig The original Decimal to copy into this new object
    */
-  explicit Decimal(const Decimal &orig) : value_(orig.value_) {}
+  Decimal(const Decimal &orig) : value_(orig.value_) {}
 
   /**
    * Empty constructor.
@@ -64,7 +59,7 @@ class Decimal {
   /**
    * @return The raw underlying encoded decimal value.
    */
-  operator NativeType() const { return value_; }  // NOLINT
+  operator NativeType() const { return value_; }// NOLINT
 
   /**
    * Compute the hash value of this decimal instance.
@@ -116,7 +111,6 @@ class Decimal {
     return *this;
   }
 
-
   /**
    * Get the string representation of the current decimal. Requires knowing the scale.
    *
@@ -153,23 +147,28 @@ class Decimal {
    * @param right               The right decimal value.
    * @param left_scale          The scale of the left decimal value.
    * @param right_scale         The scale of the right decimal value.
+   * @return new_scale          The new scale that the decimals have been scaled to
    */
-  static void MatchScales(Decimal *left, Decimal *right, uint32_t left_scale, uint32_t right_scale) {
+  static uint32_t MatchScales(Decimal *left, Decimal *right, uint32_t left_scale, uint32_t right_scale) {
     // TODO(Rohan): Optimize this by performing a binary search.
     int128_t intermediate_value;
+    uint32_t new_scale;
     if (left_scale < right_scale) {
       intermediate_value = left->ToNative();
-      for (uint32_t i = 0; i < right_scale - left_scale; i++) {
+      new_scale = right_scale - left_scale;
+      for (uint32_t i = 0; i < new_scale; i++) {
         intermediate_value *= 10;
       }
       *left = Decimal(intermediate_value);
     } else {
       intermediate_value = right->ToNative();
-      for (uint32_t i = 0; i < left_scale - right_scale; i++) {
+      new_scale = left_scale - right_scale;
+      for (uint32_t i = 0; i < new_scale; i++) {
         intermediate_value *= 10;
       }
       *right = Decimal(intermediate_value);
     }
+    return new_scale + 1;
   }
 
  private:
@@ -240,3 +239,5 @@ class Decimal {
    */
   void UnsignedDivideConstant128BitPowerOfTen(uint32_t exponent);
 };
+
+} // namespace

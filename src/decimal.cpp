@@ -1,12 +1,7 @@
 #include "decimal.h"
 #include "magic_numbers.h"
 
-//===----------------------------------------------------------------------===//
-//
-// Decimal
-//
-//===----------------------------------------------------------------------===//
-
+namespace libfixeypointy {
 
 void CalculateMultiWordProduct128(const uint128_t *const half_words_a, const uint128_t *const half_words_b,
                                   uint128_t *half_words_result, uint32_t m, uint32_t n) {
@@ -31,19 +26,19 @@ void CalculateMultiWordProduct128(const uint128_t *const half_words_a, const uin
   * @param num 128-bit unsigned integer, must not be 0.
   * @return The number of leading zeroes in 128-bit unsigned integer provided.
   */
-  static uint32_t GetNumLeadingZeroesAssumingNonZero(uint128_t num) {
-    uint64_t hi = num >> 64;
-    uint64_t lo = num;
-    int32_t retval[2] = {__builtin_clzll(hi), __builtin_clzll(lo) + 64};
-    auto idx = static_cast<uint32_t>(hi == 0);
-    return retval[idx];
-  }
+static uint32_t GetNumLeadingZeroesAssumingNonZero(uint128_t num) {
+  uint64_t hi = num >> 64;
+  uint64_t lo = num;
+  int32_t retval[2] = {__builtin_clzll(hi), __builtin_clzll(lo) + 64};
+  auto idx = static_cast<uint32_t>(hi == 0);
+  return retval[idx];
+}
 
 uint128_t CalculateUnsignedLongDivision128(uint128_t u1, uint128_t u0, uint128_t v) {
   // Hacker's Delight [2E Figure 9-3]
   if (u1 >= v) {
     // Result will overflow from 128 bits
-    throw ("Decimal Overflow from 128 bits");
+    throw("Decimal Overflow from 128 bits");
   }
 
   // Base 2^64
@@ -141,7 +136,7 @@ Decimal::NativeType DecimalComputeMagicNumbers256(const uint128_t (&a)[4], const
     uint128_t overflow_checker = result_upper >> magic_p;
     if (overflow_checker > 0) {
       // Result will overflow from 128 bits
-      throw ("Result overflow > 128 bits");
+      throw("Result overflow > 128 bits");
     }
 
     result_lower = result_lower >> magic_p;
@@ -168,7 +163,7 @@ Decimal::NativeType DecimalComputeMagicNumbers256(const uint128_t (&a)[4], const
   uint128_t overflow_checker = result_upper >> magic_p;
   if ((overflow_checker > 0) || (result_upper < add_upper)) {
     // Result will overflow from 128 bits
-    throw ("Result overflow > 128 bits");
+    throw("Result overflow > 128 bits");
   }
 
   // We know that we only retain the lower 128 bits so there is no need of shri
@@ -177,7 +172,6 @@ Decimal::NativeType DecimalComputeMagicNumbers256(const uint128_t (&a)[4], const
   result_upper = result_upper << (128 - magic_p);
   return result_lower | result_upper;
 }
-
 
 Decimal Decimal::GetNegation() { return Decimal(-value_); }
 
@@ -287,7 +281,7 @@ void Decimal::SignedMultiplyWithDecimal(Decimal multiplier, uint32_t lower_scale
   MultiplyAndSet(multiplier.GetAbs(), lower_scale);
   // Because we convert to positive above, if the sign changed, we overflowed.
   if (value_ < 0) {
-    throw ("Result overflow > 128 bits");
+    throw("Result overflow > 128 bits");
   }
   value_ = negative_result ? 0 - value_ : value_;
 }
@@ -311,7 +305,7 @@ void Decimal::SignedMultiplyWithConstant(int64_t input) {
   if (half_words_result[2] == 0 && half_words_result[3] == 0) {
     value_ = half_words_result[0] | (half_words_result[1] << 64);
   } else {
-    throw ("Result overflow > 128 bits");
+    throw("Result overflow > 128 bits");
   }
 
   value_ = negative_result ? 0 - value_ : value_;
@@ -368,7 +362,7 @@ void Decimal::SignedDivideWithDecimal(Decimal denominator, uint32_t denominator_
 
   // Because we convert to positive above, if the sign changed, we overflowed.
   if (value_ < 0) {
-    throw ("Result overflow > 128 bits");
+    throw("Result overflow > 128 bits");
   }
 
   value_ = negative_result ? 0 - value_ : value_;
@@ -604,3 +598,5 @@ std::string Decimal::ToString(uint32_t scale) const {
   output.append(integral_string);
   return output;
 }
+
+} // namespace

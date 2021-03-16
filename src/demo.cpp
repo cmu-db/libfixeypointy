@@ -7,10 +7,12 @@
 
 #define DECIMAL_DELIMITER ":"
 
+using namespace libfixeypointy;
+
 struct DemoDecimal {
   Decimal decimal;
   std::string orig_value;
-  int orig_scale;
+  uint32_t orig_scale;
 };
 
 DemoDecimal parse_decimal(std::stringstream &input) {
@@ -18,34 +20,38 @@ DemoDecimal parse_decimal(std::stringstream &input) {
   input >> val;
 
   auto position = val.find(DECIMAL_DELIMITER);
-  if (position == std::string::npos) {
-    throw std::invalid_argument("Invalid decimal format '" + val + "'");
+
+  // Decimal String
+  auto decimal = val.substr(0, position);
+
+  // If there is no delimiter, then we will just use '1' for the scale
+  uint32_t scale = 1;
+  if (position != std::string::npos) {
+    scale = std::stoi(val.substr(position + 1));
   }
-  auto decimal = val.substr(0, position + 1);
-  auto scale = std::stoi(val.substr(position + 1));
 
   DemoDecimal result{ Decimal(decimal, scale), decimal, scale };
   return result;
 }
 
-Decimal compute_result(const Decimal &decimal1, const Decimal &decimal2, const std::string &op) {
-  Decimal result(decimal1);
+Decimal compute_result(DemoDecimal &decimal1, DemoDecimal &decimal2, const std::string &op, const uint32_t scale) {
+  Decimal result(decimal1.decimal);
 
   // Addition
   if (op == "+") {
-    result += decimal2;
+    result += decimal2.decimal;
   }
   // Subtraction
   else if (op == "-") {
-
+    result -= decimal2.decimal;
   }
   // Multiplication
   else if (op == "*") {
-
+    result.SignedMultiplyWithDecimal(decimal2.decimal, scale);
   }
   // Division
   else if (op == "/") {
-
+    result.SignedDivideWithDecimal(decimal2.decimal, scale);
   }
   // Unexpected!
   else {
@@ -57,10 +63,16 @@ Decimal compute_result(const Decimal &decimal1, const Decimal &decimal2, const s
 
 
 int main(int argc, char *argv[]) {
+  std::string equals;
+  bool has_equals = false;
+  DemoDecimal expected;
+
   for (std::string line; std::getline(std::cin, line);) {
     std::transform(line.begin(), line.end(), line.begin(), ::tolower);
     if (line == "quit") {
       break;
+    } else if (line.empty()) {
+      continue;
     }
 
     // INPUT FORMAT: <DECIMAL>:<SCALE> <OP> <DECIMAL>:<SCALE> = <DECIMAL>:<SCALE>
@@ -77,19 +89,34 @@ int main(int argc, char *argv[]) {
     auto val2 = parse_decimal(input);
 
     // Equals
-    std::string equals;
+
+    has_equals = false;
     input >> equals;
-    if (equals != "=") {
-      throw std::invalid_argument("Invalid operation format " + line);
+    if (!equals.empty()) {
+      if (equals != "=") {
+        throw std::invalid_argument("Invalid operation format '" + line + "'");
+      }
+      // Expected Result Decimal
+      expected = parse_decimal(input);
+      has_equals = true;
     }
 
-    // Expected Result Decimal
-    auto expected = parse_decimal(input);
-
     // Execute!
-    auto result = compute_result(val1.decimal, val2.decimal, op);
-    std::cout << "Result: " << result.ToString(expected.orig_scale) << std::endl;
-    break;
+    uint32_t new_scale = Decimal::MatchScales(&val1.decimal, &val2.decimal, val1.orig_scale, val2.orig_scale);
+    auto result = compute_result(val1, val2, op, new_scale);
+//    std::cout << "Decimal1: " <<  << " [ORIG:" << val1.orig_value << "]" << std::endl;
+//    std::cout << "Decimal2: " << val2.decimal.ToString(val2.orig_scale) << " [ORIG:" << val2.orig_value << "]" << std::endl;
+    std::cout << ">>> "
+              << val1.decimal.ToString(new_scale) << " "
+              << op << " "
+              << val2.decimal.ToString(new_scale) << " = "
+              << result.ToString(new_scale) << " ";
+    if (has_equals) {
+//      [EXPECTED:" << expected.orig_value << "]" << std::endl;
+    }
+    std::cout << std::endl;
+
+//    break;
   }
   return 0;
 
