@@ -1,5 +1,6 @@
 <img src="./logo/libfixeypointy.svg" alt="libfixeypointy" height="200">
-*We couldn't use the name "libfixedpoint" because of SEO*
+
+*We couldn't use the name "libfixedpoint" because it would be terrible for SEO...*
 
 -----------------
 
