@@ -67,7 +67,7 @@ class Decimal {
    * @return The hash value for this decimal instance.
    */
   hash_t Hash(const hash_t seed) const {
-    uint128_t x = value_;
+    uint128_t x = value_ * seed;
     const uint64_t k_mul = 0x9ddfea08eb382d69ULL;
     uint128_t low_mask = 0xFFFFFFFFFFFFFFFF;
     uint64_t a = ((x & low_mask) ^ (x >> 64)) * k_mul;
@@ -81,7 +81,7 @@ class Decimal {
   /**
    * @return The hash value of this decimal instance.
    */
-  hash_t Hash() const { return Hash(0); }
+  hash_t Hash() const { return Hash(1); }
 
   /**
    * Add the encoded decimal value @em that to this decimal value.
@@ -123,9 +123,20 @@ class Decimal {
   NativeType ToNative() const { return value_; }
 
   /**
+   * Compute the negative value of the current decimal
+   * @return negative value
+   */
+  Decimal GetNegation();
+
+  /**
+   * Compute the absolute value (always positive) version of the current decimal.
+   * @return absolute value
+   */
+  Decimal GetAbs();
+
+  /**
    * Divide the current decimal by the given decimal.
    * The result is in the numerator's (current decimal's) scale.
-   *
    * @param denominator             The decimal to divide by.
    * @param denominator_scale       The scale of the denominator.
    */
@@ -133,16 +144,17 @@ class Decimal {
 
   /**
    * Multiply the current decimal by the given decimal.
-   * The result is in the higher scale of the current decimal and the multiplier.
-   *
+   * The result is in the higher scale of the current decimal and the
+   * multiplier.
    * @param multiplier          The decimal to multiply by.
    * @param lower_scale         The lower scale of the two decimals.
    */
   void SignedMultiplyWithDecimal(Decimal multiplier, uint32_t lower_scale);
 
   /**
-   * Match the scales of the two decimals by rescaling the less precise of the inputs to the higher scale.
-   *
+   * Match the scales of the two decimals by rescaling the less precise of
+   * the inputs to the higher scale. This will change the underlying
+   * native value of one of the given Decimals.
    * @param left                The left decimal value.
    * @param right               The right decimal value.
    * @param left_scale          The scale of the left decimal value.
@@ -151,7 +163,7 @@ class Decimal {
    */
   static uint32_t MatchScales(Decimal *left, Decimal *right, uint32_t left_scale, uint32_t right_scale) {
     // TODO(Rohan): Optimize this by performing a binary search.
-    int128_t intermediate_value;
+    NativeType intermediate_value;
     uint32_t new_scale;
     if (left_scale < right_scale) {
       intermediate_value = left->ToNative();
@@ -159,14 +171,14 @@ class Decimal {
       for (uint32_t i = 0; i < new_scale; i++) {
         intermediate_value *= 10;
       }
-      *left = Decimal(intermediate_value);
+      left->value_ = intermediate_value;
     } else {
       intermediate_value = right->ToNative();
       new_scale = left_scale - right_scale;
       for (uint32_t i = 0; i < new_scale; i++) {
         intermediate_value *= 10;
       }
-      *right = Decimal(intermediate_value);
+      right->value_ = intermediate_value;
     }
     return new_scale + 1;
   }
@@ -180,26 +192,16 @@ class Decimal {
   /** A mask for the top half of a 128-bit decimal. */
   static constexpr const uint128_t TOP_MASK = ~BOTTOM_MASK;
 
-  /** @return The negative version of the current 128-bit decimal. */
-  Decimal GetNegation();
-
-  /** @return The absolute value (always positive) version of the current 128-bit decimal. */
-  Decimal GetAbs();
-
   /**
    * Divide the current decimal by the unsigned 128-bit constant supplied.
-   *
    * @warning Assumes that the current decimal is non-negative.
-   *
    * @param constant The unsigned 128-bit constant to divide by.
    */
   void UnsignedDivideConstant128Bit(uint128_t constant);
 
   /**
    * Divide the 256-bit unsigned dividend with a 128-bit unsigned divisor.
-   *
    * @warning Assumes that the magic number required is already present in MAGIC_MAP256_BIT_CONSTANT_DIVISION.
-   *
    * @param unsigned_dividend   The 256-bit unsigned dividend, represented as an array of 128 bit numbers,
    *                            where each 128-bit number only has the lower 64 bits set.
    * @param unsigned_constant   The 128-bit unsigned divisor.
@@ -210,7 +212,6 @@ class Decimal {
 
   /**
    * Divide the current decimal by the divisor provided.
-   *
    * @param divisor         The divisor to divide by.
    */
   void SignedDivideWithConstant(int64_t divisor);
@@ -218,7 +219,6 @@ class Decimal {
   /**
    * Multiply the current decimal with an unsigned decimal.
    * The scale of the result depends on the scale provided.
-   *
    * @param unsigned_input  The input decimal to multiply against. Must be unsigned!
    * @param scale           The number of significant digits after the decimal point.
    *                        To obtain higher scale result, pass in the lower scale of the operands.
@@ -226,8 +226,10 @@ class Decimal {
    */
   void MultiplyAndSet(const Decimal &unsigned_input, uint32_t scale);
 
-  /** Signed version of MultiplyAndSet with a constant
-   * @param input the constant to be multiplied with. */
+  /**
+   * Signed version of MultiplyAndSet with a constant
+   * @param input the constant to be multiplied with.
+   */
   void SignedMultiplyWithConstant(int64_t input);
 
   /**

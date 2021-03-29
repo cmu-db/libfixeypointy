@@ -6,11 +6,12 @@
 #include "decimal.h"
 
 #define DECIMAL_DELIMITER ":"
+#define UNUSED_ATTRIBUTE __attribute__((unused))
 
 using namespace libfixeypointy;
 
 struct DemoDecimal {
-  Decimal decimal;
+  Decimal *decimal;
   std::string orig_value;
   uint32_t orig_scale;
 };
@@ -30,28 +31,28 @@ DemoDecimal parse_decimal(std::stringstream &input) {
     scale = std::stoi(val.substr(position + 1));
   }
 
-  DemoDecimal result{ Decimal(decimal, scale), decimal, scale };
+  DemoDecimal result{ new Decimal(decimal, scale), decimal, scale };
   return result;
 }
 
 Decimal compute_result(DemoDecimal &decimal1, DemoDecimal &decimal2, const std::string &op, const uint32_t scale) {
-  Decimal result(decimal1.decimal);
+  Decimal result(*decimal1.decimal);
 
   // Addition
   if (op == "+") {
-    result += decimal2.decimal;
+    result += *decimal2.decimal;
   }
   // Subtraction
   else if (op == "-") {
-    result -= decimal2.decimal;
+    result -= *decimal2.decimal;
   }
   // Multiplication
   else if (op == "*") {
-    result.SignedMultiplyWithDecimal(decimal2.decimal, scale);
+    result.SignedMultiplyWithDecimal(*decimal2.decimal, scale);
   }
   // Division
   else if (op == "/") {
-    result.SignedDivideWithDecimal(decimal2.decimal, scale);
+    result.SignedDivideWithDecimal(*decimal2.decimal, scale);
   }
   // Unexpected!
   else {
@@ -62,7 +63,7 @@ Decimal compute_result(DemoDecimal &decimal1, DemoDecimal &decimal2, const std::
 }
 
 
-int main(int argc, char *argv[]) {
+int main(UNUSED_ATTRIBUTE int argc, UNUSED_ATTRIBUTE char *argv[]) {
   std::string equals;
   bool has_equals = false;
   DemoDecimal expected;
@@ -102,14 +103,14 @@ int main(int argc, char *argv[]) {
     }
 
     // Execute!
-    uint32_t new_scale = Decimal::MatchScales(&val1.decimal, &val2.decimal, val1.orig_scale, val2.orig_scale);
+    uint32_t new_scale = Decimal::MatchScales(val1.decimal, val2.decimal, val1.orig_scale, val2.orig_scale);
     auto result = compute_result(val1, val2, op, new_scale);
 //    std::cout << "Decimal1: " <<  << " [ORIG:" << val1.orig_value << "]" << std::endl;
 //    std::cout << "Decimal2: " << val2.decimal.ToString(val2.orig_scale) << " [ORIG:" << val2.orig_value << "]" << std::endl;
     std::cout << ">>> "
-              << val1.decimal.ToString(new_scale) << " "
+              << val1.decimal->ToString(new_scale) << " "
               << op << " "
-              << val2.decimal.ToString(new_scale) << " = "
+              << val2.decimal->ToString(new_scale) << " = "
               << result.ToString(new_scale) << " ";
     if (has_equals) {
 //      [EXPECTED:" << expected.orig_value << "]" << std::endl;
