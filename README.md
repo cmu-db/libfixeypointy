@@ -1,5 +1,9 @@
-# libfixeypointy
+<img src="./logo/libfixeypointy.svg" alt="libfixeypointy" height="200">
 *We couldn't use the name "libfixedpoint" because of SEO*
+
+-----------------
+
+[![CircleCI](https://circleci.com/gh/cmu-db/libfixeypointy/tree/main.svg?style=svg)](https://circleci.com/gh/cmu-db/libfixeypointy/tree/main)
 
 This is a portable C++ library for fixed-point decimals. It was originally developed as part of the [NoisePage](https://noise.page) database project at Carnegie Mellon University.
 
