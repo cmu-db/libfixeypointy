@@ -59,7 +59,7 @@ class Decimal {
   /**
    * @return The raw underlying encoded decimal value.
    */
-  operator NativeType() const { return value_; }// NOLINT
+  operator NativeType() const { return value_; }  // NOLINT
 
   /**
    * Compute the hash value of this decimal instance.
@@ -242,4 +242,4 @@ class Decimal {
   void UnsignedDivideConstant128BitPowerOfTen(uint32_t exponent);
 };
 
-} // namespace
+}  // namespace libfixeypointy

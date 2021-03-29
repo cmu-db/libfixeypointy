@@ -22,10 +22,10 @@ void CalculateMultiWordProduct128(const uint128_t *const half_words_a, const uin
 }
 
 /**
-  * Compute the number of leading zeroes in num, ASSUMING THAT num IS NOT ZERO.
-  * @param num 128-bit unsigned integer, must not be 0.
-  * @return The number of leading zeroes in 128-bit unsigned integer provided.
-  */
+ * Compute the number of leading zeroes in num, ASSUMING THAT num IS NOT ZERO.
+ * @param num 128-bit unsigned integer, must not be 0.
+ * @return The number of leading zeroes in 128-bit unsigned integer provided.
+ */
 static uint32_t GetNumLeadingZeroesAssumingNonZero(uint128_t num) {
   uint64_t hi = num >> 64;
   uint64_t lo = num;
@@ -201,8 +201,7 @@ void Decimal::MultiplyAndSet(const Decimal &unsigned_input, uint32_t scale) {
   }
 
   // Magic number half words
-  uint128_t magic[4] = {MAGIC_ARRAY[scale][3], MAGIC_ARRAY[scale][2],
-                        MAGIC_ARRAY[scale][1], MAGIC_ARRAY[scale][0]};
+  uint128_t magic[4] = {MAGIC_ARRAY[scale][3], MAGIC_ARRAY[scale][2], MAGIC_ARRAY[scale][1], MAGIC_ARRAY[scale][0]};
   uint32_t magic_p = MAGIC_P_AND_ALGO_ARRAY[scale][0] - 256;
   uint32_t algo = MAGIC_P_AND_ALGO_ARRAY[scale][1];
 
@@ -340,8 +339,7 @@ void Decimal::SignedDivideWithDecimal(Decimal denominator, uint32_t denominator_
   uint128_t half_words_result[4];
   {
     uint128_t half_words_a[2] = {value_ & BOTTOM_MASK, (value_ & TOP_MASK) >> 64};
-    uint128_t half_words_b[2] = {POWER_OF_TEN[denominator_scale][1],
-                                 POWER_OF_TEN[denominator_scale][0]};
+    uint128_t half_words_b[2] = {POWER_OF_TEN[denominator_scale][1], POWER_OF_TEN[denominator_scale][0]};
     CalculateMultiWordProduct128(half_words_a, half_words_b, half_words_result, 2, 2);
   }
 
@@ -599,4 +597,4 @@ std::string Decimal::ToString(uint32_t scale) const {
   return output;
 }
 
-} // namespace
+}  // namespace libfixeypointy

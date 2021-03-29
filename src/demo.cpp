@@ -1,7 +1,7 @@
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <utility>
-#include <algorithm>
 
 #include "decimal.h"
 
@@ -31,7 +31,7 @@ DemoDecimal parse_decimal(std::stringstream &input) {
     scale = std::stoi(val.substr(position + 1));
   }
 
-  DemoDecimal result{ new Decimal(decimal, scale), decimal, scale };
+  DemoDecimal result{new Decimal(decimal, scale), decimal, scale};
   return result;
 }
 
@@ -61,7 +61,6 @@ Decimal compute_result(DemoDecimal &decimal1, DemoDecimal &decimal2, const std::
 
   return result;
 }
-
 
 int main(UNUSED_ATTRIBUTE int argc, UNUSED_ATTRIBUTE char *argv[]) {
   std::string equals;
@@ -105,21 +104,17 @@ int main(UNUSED_ATTRIBUTE int argc, UNUSED_ATTRIBUTE char *argv[]) {
     // Execute!
     uint32_t new_scale = Decimal::MatchScales(val1.decimal, val2.decimal, val1.orig_scale, val2.orig_scale);
     auto result = compute_result(val1, val2, op, new_scale);
-//    std::cout << "Decimal1: " <<  << " [ORIG:" << val1.orig_value << "]" << std::endl;
-//    std::cout << "Decimal2: " << val2.decimal.ToString(val2.orig_scale) << " [ORIG:" << val2.orig_value << "]" << std::endl;
-    std::cout << ">>> "
-              << val1.decimal->ToString(new_scale) << " "
-              << op << " "
-              << val2.decimal->ToString(new_scale) << " = "
-              << result.ToString(new_scale) << " ";
+    //    std::cout << "Decimal1: " <<  << " [ORIG:" << val1.orig_value << "]" << std::endl;
+    //    std::cout << "Decimal2: " << val2.decimal.ToString(val2.orig_scale) << " [ORIG:" << val2.orig_value << "]" <<
+    //    std::endl;
+    std::cout << ">>> " << val1.decimal->ToString(new_scale) << " " << op << " " << val2.decimal->ToString(new_scale)
+              << " = " << result.ToString(new_scale) << " ";
     if (has_equals) {
-//      [EXPECTED:" << expected.orig_value << "]" << std::endl;
+      //      [EXPECTED:" << expected.orig_value << "]" << std::endl;
     }
     std::cout << std::endl;
 
-//    break;
+    //    break;
   }
   return 0;
-
-
 }
