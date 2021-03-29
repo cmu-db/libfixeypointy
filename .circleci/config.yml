@@ -6,10 +6,7 @@ jobs:
     steps:
      # install dependencies
      - run: apt-get -y update &&
-            apt-get -y install
-              build-essential
-              cmake
-              g++
+            apt-get -y install cmake g++
      - checkout
      - run: mkdir build
      - run: cd build && cmake -DCMAKE_BUILD_TYPE=debug ..
