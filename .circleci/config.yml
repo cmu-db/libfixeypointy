@@ -6,12 +6,17 @@ jobs:
     steps:
      # install dependencies
      - run: apt-get -y update &&
-            DEBIAN_FRONTEND=noninteractive apt-get -y install cmake g++
+            DEBIAN_FRONTEND=noninteractive apt-get -y install 
+            cmake
+            clang-8
+            clang-format-8
+            clang-tidy-8
+            g++
      - checkout
      - run: mkdir build
      - run: cd build && cmake -DCMAKE_BUILD_TYPE=debug ..
      - run: cd build && make -j
-     #- run: cd build && make check-lint
+     - run: cd build && make check-format
      #- run: cd build && make check-clang-tidy
      #- run: cd build && make check-tests
 

@@ -1,9 +1,68 @@
 cmake_minimum_required(VERSION 3.16)
-project(libfixeypointy)
+set(CMAKE_CXX_STANDARD 17)              # Compile as C++17
+set(CMAKE_CXX_STANDARD_REQUIRED ON)     # Require C++17 support
 
-set(CMAKE_CXX_STANDARD 17)
+project(libfixeypointy
+        VERSION 1.0
+        DESCRIPTION "Fixed-Point Decimal Library"
+        LANGUAGES CXX
+)
 
+# Expected directory structure.
+set(BUILD_SUPPORT_DIR "${CMAKE_SOURCE_DIR}/support")
+
+################################################################################
+# DEPENDENCIES
+################################################################################
+
+# clang-format
+find_program(CLANG_FORMAT_BIN
+        NAMES clang-format clang-format-8
+        HINTS ${LIBFIXEYPOINTY_CLANG_SEARCH_PATH})
+if ("${CLANG_FORMAT_BIN}" STREQUAL "CLANG_FORMAT_BIN-NOTFOUND")
+    message(WARNING "libfixeypointy/main could not find clang-format.")
+else()
+    message(STATUS "libfixeypointy/main found clang-format at ${CLANG_FORMAT_BIN}")
+endif()
+
+################################################################################
+# COMPILER SETUP
+################################################################################
+
+# Compiler flags.
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -Wextra -Werror -march=native")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+
+################################################################################
+# MAKE TARGETS
+################################################################################
+
+# clang-format
+# runs clang format and updates files in place.
+string(CONCAT LIBFIXEYPOINTY_FORMAT_DIRS
+        "${CMAKE_CURRENT_SOURCE_DIR}/src"
+)
+add_custom_target(format ${BUILD_SUPPORT_DIR}/run_clang_format.py
+        ${CLANG_FORMAT_BIN}
+        ${BUILD_SUPPORT_DIR}/clang_format_exclusions.txt
+        --source_dirs ${LIBFIXEYPOINTY_FORMAT_DIRS}
+        --fix
+        --quiet
+)
+# Run clang-format and exit with a non-zero exit code if any files need to be reformatted.
+add_custom_target(check-format
+        ${BUILD_SUPPORT_DIR}/run_clang_format.py
+        ${CLANG_FORMAT_BIN}
+        ${BUILD_SUPPORT_DIR}/clang_format_exclusions.txt
+        --source_dirs ${LIBFIXEYPOINTY_FORMAT_DIRS}
+        --quiet
+        USES_TERMINAL
+)
+
+
+# Shared Library
 add_library(libfixeypointy src/decimal.h src/decimal.cpp src/magic_numbers.h)
 
+# Demo Program
 add_executable(demo src/demo.cpp)
 target_link_libraries(demo libfixeypointy)
