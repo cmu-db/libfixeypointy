@@ -1,4 +1,5 @@
 #include "decimal.h"
+#include "common.h"
 #include "magic_numbers.h"
 
 namespace libfixeypointy {
@@ -88,16 +89,16 @@ uint128_t CalculateUnsignedLongDivision128(uint128_t u1, uint128_t u0, uint128_t
 }
 
 /** Some code that was refactored out of Rohan's stuff. Here be dragons. */
-Decimal::NativeType DecimalComputeMagicNumbers128(const uint128_t (&half_words_result)[4], uint32_t algo,
+Decimal::NativeType DecimalComputeMagicNumbers128(const uint128_t (&half_words_result)[4], AlgorithmType algo,
                                                   uint32_t magic_p, uint128_t current_value) {
   // Hacker's Delight [2E Chapter 10 Integer Division by Constants]
   switch (algo) {
-    case 0: {
+    case AlgorithmType::OVERFLOW_SMALL: {
       // Overflow Algorithm 1 - Magic number is < 2^128
       uint128_t result_upper = half_words_result[2] | (half_words_result[3] << 64);
       return result_upper >> magic_p;
     }
-    case 1: {
+    case AlgorithmType::OVERFLOW_LARGE: {
       // Overflow Algorithm 2 - Magic number is >= 2^128
       uint128_t result_upper = half_words_result[2] | (half_words_result[3] << 64);
       uint128_t add_upper = current_value;
@@ -118,12 +119,12 @@ Decimal::NativeType DecimalComputeMagicNumbers128(const uint128_t (&half_words_r
 }
 
 /** Some code that was refactored out of Rohan's stuff. Here be dragons. */
-Decimal::NativeType DecimalComputeMagicNumbers256(const uint128_t (&a)[4], const uint128_t (&b)[4], uint32_t algo,
+Decimal::NativeType DecimalComputeMagicNumbers256(const uint128_t (&a)[4], const uint128_t (&b)[4], AlgorithmType algo,
                                                   uint32_t magic_p) {
   // Hacker's Delight [2E Chapter 10 Integer Division by Constants]
   uint128_t half_words_magic_result[8];
 
-  if (algo == 0) {
+  if (algo == AlgorithmType::OVERFLOW_SMALL) {
     // Overflow Algorithm 1 - Magic number is < 2^256
 
     // Magic Result
@@ -202,8 +203,8 @@ void Decimal::MultiplyAndSet(const Decimal &unsigned_input, uint32_t scale) {
 
   // Magic number half words
   uint128_t magic[4] = {MAGIC_ARRAY[scale][3], MAGIC_ARRAY[scale][2], MAGIC_ARRAY[scale][1], MAGIC_ARRAY[scale][0]};
-  uint32_t magic_p = MAGIC_P_AND_ALGO_ARRAY[scale][0] - 256;
-  uint32_t algo = MAGIC_P_AND_ALGO_ARRAY[scale][1];
+  uint32_t magic_p = MAGIC_P_AND_ALGO_ARRAY[scale].first - 256;
+  AlgorithmType algo = MAGIC_P_AND_ALGO_ARRAY[scale].second;
 
   value_ = DecimalComputeMagicNumbers256(half_words_result, magic, algo, magic_p);
 }
@@ -223,7 +224,7 @@ void Decimal::UnsignedDivideConstant128BitPowerOfTen(uint32_t exponent) {
   }
 
   uint32_t magic_p = MAGIC_MAP128_BIT_POWER_TEN[exponent].p_ - 128;
-  uint32_t algo = MAGIC_MAP128_BIT_POWER_TEN[exponent].algo_;
+  AlgorithmType algo = MAGIC_MAP128_BIT_POWER_TEN[exponent].algo_;
 
   value_ = DecimalComputeMagicNumbers128(half_words_result, algo, magic_p, value_);
 }
@@ -266,7 +267,7 @@ void Decimal::UnsignedDivideConstant128Bit(uint128_t constant) {
     }
 
     uint32_t magic_p = magic_map128_bit_constant_division[constant].p_ - 128;
-    uint32_t algo = magic_map128_bit_constant_division[constant].algo_;
+    AlgorithmType algo = magic_map128_bit_constant_division[constant].algo_;
 
     value_ = DecimalComputeMagicNumbers128(half_words_result, algo, magic_p, value_);
   }
@@ -373,7 +374,7 @@ uint128_t Decimal::UnsignedMagicDivideConstantNumerator256Bit(const uint128_t (&
                         magic_map256_bit_constant_division[unsigned_constant].b_,
                         magic_map256_bit_constant_division[unsigned_constant].a_};
   uint32_t magic_p = magic_map256_bit_constant_division[unsigned_constant].p_ - 256;
-  uint32_t algo = magic_map256_bit_constant_division[unsigned_constant].algo_;
+  AlgorithmType algo = magic_map256_bit_constant_division[unsigned_constant].algo_;
 
   return DecimalComputeMagicNumbers256(unsigned_dividend, magic, algo, magic_p);
 }

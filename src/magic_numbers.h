@@ -4,9 +4,13 @@
  */
 
 #include <bits/stdc++.h>
+#include "common.h"
+
 using int128_t = __int128;
 using uint128_t = unsigned __int128;
 using hash_t = uint64_t;
+
+namespace libfixeypointy {
 
 /** A hash function for uint128_t values. */
 struct Unsigned128BitHash {
@@ -75,72 +79,82 @@ static constexpr uint128_t MAGIC_ARRAY[39][4] = {
 /**
  * The 256-bit P and algorithm types for dividing by powers of 10.
  */
-static constexpr uint32_t MAGIC_P_AND_ALGO_ARRAY[39][2] = {
-    {0, 0},   {259, 0}, {263, 1}, {266, 1}, {267, 0}, {272, 0}, {275, 0}, {279, 0}, {282, 0}, {285, 0},
-    {289, 0}, {291, 0}, {296, 1}, {299, 0}, {301, 0}, {305, 0}, {309, 0}, {313, 1}, {316, 1}, {320, 1},
-    {321, 0}, {325, 0}, {329, 0}, {333, 1}, {336, 1}, {339, 0}, {342, 0}, {346, 1}, {349, 0}, {350, 0},
-    {351, 0}, {359, 1}, {362, 0}, {363, 0}, {367, 0}, {372, 0}, {373, 0}, {379, 1}, {383, 1}};
+static constexpr std::pair<uint32_t, AlgorithmType> MAGIC_P_AND_ALGO_ARRAY[39] = {
+    {0, AlgorithmType::OVERFLOW_SMALL},   {259, AlgorithmType::OVERFLOW_SMALL}, {263, AlgorithmType::OVERFLOW_LARGE},
+    {266, AlgorithmType::OVERFLOW_LARGE}, {267, AlgorithmType::OVERFLOW_SMALL}, {272, AlgorithmType::OVERFLOW_SMALL},
+    {275, AlgorithmType::OVERFLOW_SMALL}, {279, AlgorithmType::OVERFLOW_SMALL}, {282, AlgorithmType::OVERFLOW_SMALL},
+    {285, AlgorithmType::OVERFLOW_SMALL}, {289, AlgorithmType::OVERFLOW_SMALL}, {291, AlgorithmType::OVERFLOW_SMALL},
+    {296, AlgorithmType::OVERFLOW_LARGE}, {299, AlgorithmType::OVERFLOW_SMALL}, {301, AlgorithmType::OVERFLOW_SMALL},
+    {305, AlgorithmType::OVERFLOW_SMALL}, {309, AlgorithmType::OVERFLOW_SMALL}, {313, AlgorithmType::OVERFLOW_LARGE},
+    {316, AlgorithmType::OVERFLOW_LARGE}, {320, AlgorithmType::OVERFLOW_LARGE}, {321, AlgorithmType::OVERFLOW_SMALL},
+    {325, AlgorithmType::OVERFLOW_SMALL}, {329, AlgorithmType::OVERFLOW_SMALL}, {333, AlgorithmType::OVERFLOW_LARGE},
+    {336, AlgorithmType::OVERFLOW_LARGE}, {339, AlgorithmType::OVERFLOW_SMALL}, {342, AlgorithmType::OVERFLOW_SMALL},
+    {346, AlgorithmType::OVERFLOW_LARGE}, {349, AlgorithmType::OVERFLOW_SMALL}, {350, AlgorithmType::OVERFLOW_SMALL},
+    {351, AlgorithmType::OVERFLOW_SMALL}, {359, AlgorithmType::OVERFLOW_LARGE}, {362, AlgorithmType::OVERFLOW_SMALL},
+    {363, AlgorithmType::OVERFLOW_SMALL}, {367, AlgorithmType::OVERFLOW_SMALL}, {372, AlgorithmType::OVERFLOW_SMALL},
+    {373, AlgorithmType::OVERFLOW_SMALL}, {379, AlgorithmType::OVERFLOW_LARGE}, {383, AlgorithmType::OVERFLOW_LARGE}};
 
 /** 128-bit magic numbers. See this file's header comment. */
 class MagicNumber128 {
  public:
-  uint128_t upper_;  ///< Upper half of 128 bit magic number
-  uint128_t lower_;  ///< Lower half of 128 bit magic number
-  uint32_t p_;       ///< p as defined in magic division.
-  uint32_t algo_;    ///< The algorithm type.
+  uint128_t upper_;     ///< Upper half of 128 bit magic number
+  uint128_t lower_;     ///< Lower half of 128 bit magic number
+  uint32_t p_;          ///< p as defined in magic division.
+  AlgorithmType algo_;  ///< The algorithm type.
 };
 
 /** 256-bit magic numbers. See this file's header comment. */
 class MagicNumber256 {
  public:
-  uint128_t a_;    ///< Highest 64 bits.
-  uint128_t b_;    ///< High middle 64 bits.
-  uint128_t c_;    ///< Low middle 64 bits.
-  uint128_t d_;    ///< Lowest 64 bits.
-  uint32_t p_;     ///< p as defined in magic division.
-  uint32_t algo_;  ///< The algorithm type.
+  uint128_t a_;         ///< Highest 64 bits.
+  uint128_t b_;         ///< High middle 64 bits.
+  uint128_t c_;         ///< Low middle 64 bits.
+  uint128_t d_;         ///< Lowest 64 bits.
+  uint32_t p_;          ///< p as defined in magic division.
+  AlgorithmType algo_;  ///< The algorithm type.
 };
 
 /** 128-bit magic numbers for powers of 10. */
-static constexpr MagicNumber128 MAGIC_MAP128_BIT_POWER_TEN[39] = {{0, 0, 0, 0},
-                                                                  {0xcccccccccccccccc, 0xcccccccccccccccd, 131, 0},
-                                                                  {0x28f5c28f5c28f5c2, 0x8f5c28f5c28f5c29, 132, 0},
-                                                                  {0x624dd2f1a9fbe76, 0xc8b4395810624dd3, 138, 1},
-                                                                  {0xd1b71758e219652b, 0xd3c36113404ea4a9, 141, 0},
-                                                                  {0x29f16b11c6d1e108, 0xc3f3e0370cdc8755, 142, 0},
-                                                                  {0x8637bd05af6c69b, 0x5a63f9a49c2c1b11, 143, 0},
-                                                                  {0xd6bf94d5e57a42bc, 0x3d32907604691b4d, 151, 0},
-                                                                  {0x5798ee2308c39df9, 0xfb841a566d74f87b, 155, 1},
-                                                                  {0x89705f4136b4a597, 0x31680a88f8953031, 157, 0},
-                                                                  {0x36f9bfb3af7b756f, 0xad5cd10396a21347, 159, 0},
-                                                                  {0xafebff0bcb24aafe, 0xf78f69a51539d749, 164, 0},
-                                                                  {0x232f33025bd42232, 0xfe4fe1edd10b9175, 165, 0},
-                                                                  {0x709709a125da0709, 0x9432d2f9035837dd, 170, 0},
-                                                                  {0xb424dc35095cd80f, 0x538484c19ef38c95, 174, 0},
-                                                                  {0x203af9ee756159b2, 0x1f3a6e0297ec1421, 178, 1},
-                                                                  {0x39a5652fb1137856, 0xd30baf9a1e626a6d, 179, 0},
-                                                                  {0xb877aa3236a4b449, 0x09befeb9fad487c3, 184, 0},
-                                                                  {0x2725dd1d243aba0e, 0x75fe645cc4873f9f, 188, 1},
-                                                                  {0x760f253edb4ab0d2, 0x9598f4f1e8361973, 190, 0},
-                                                                  {0x79ca10c9242235d5, 0x11e976394d79eb09, 195, 1},
-                                                                  {0x2e3b40a0e9b4f7dd, 0xa7edf82dd794bc07, 198, 1},
-                                                                  {0xf1c90080baf72cb1, 0x5324c68b12dd6339, 201, 0},
-                                                                  {0x305b66802564a289, 0xdd6dc14f03c5e0a5, 202, 0},
-                                                                  {0x9abe14cd44753b52, 0xc4926a9672793543, 207, 0},
-                                                                  {0xf79687aed3eec551, 0x3a83ddbd83f52205, 211, 0},
-                                                                  {0x63090312bb2c4eed, 0x4a9b257f019540cf, 213, 0},
-                                                                  {0x4f3a68dbc8f03f24, 0x3baf513267aa9a3f, 216, 0},
-                                                                  {0xfd87b5f28300ca0d, 0x8bca9d6e188853fd, 221, 0},
-                                                                  {0xcad2f7f5359a3b3e, 0x096ee45813a04331, 224, 0},
-                                                                  {0x4484bfeebc29f863, 0x424b06f3529a051b, 228, 1},
-                                                                  {0x39d66589687f9e9, 0x01d59f290ee19daf, 231, 1},
-                                                                  {0x9f623d5a8a732974, 0xcfbc31db4b0295e5, 235, 1},
-                                                                  {0xa6274bbdd0fadd61, 0xecb1ad8aeacdd58f, 237, 0},
-                                                                  {0x84ec3c97da624ab4, 0xbd5af13bef0b113f, 240, 0},
-                                                                  {0xd4ad2dbfc3d07787, 0x955e4ec64b44e865, 244, 0},
-                                                                  {0x5512124cb4b9c969, 0x6ef285e8eae85cf5, 246, 0},
-                                                                  {0x881cea14545c7575, 0x7e50d64177da2e55, 250, 0},
-                                                                  {0x6ce3ee76a9e3912a, 0xcb73de9ac6482511, 253, 0}};
+static constexpr MagicNumber128 MAGIC_MAP128_BIT_POWER_TEN[39] = {
+    {0, 0, 0, AlgorithmType::OVERFLOW_SMALL},
+    {0xcccccccccccccccc, 0xcccccccccccccccd, 131, AlgorithmType::OVERFLOW_SMALL},
+    {0x28f5c28f5c28f5c2, 0x8f5c28f5c28f5c29, 132, AlgorithmType::OVERFLOW_SMALL},
+    {0x624dd2f1a9fbe76, 0xc8b4395810624dd3, 138, AlgorithmType::OVERFLOW_LARGE},
+    {0xd1b71758e219652b, 0xd3c36113404ea4a9, 141, AlgorithmType::OVERFLOW_SMALL},
+    {0x29f16b11c6d1e108, 0xc3f3e0370cdc8755, 142, AlgorithmType::OVERFLOW_SMALL},
+    {0x8637bd05af6c69b, 0x5a63f9a49c2c1b11, 143, AlgorithmType::OVERFLOW_SMALL},
+    {0xd6bf94d5e57a42bc, 0x3d32907604691b4d, 151, AlgorithmType::OVERFLOW_SMALL},
+    {0x5798ee2308c39df9, 0xfb841a566d74f87b, 155, AlgorithmType::OVERFLOW_LARGE},
+    {0x89705f4136b4a597, 0x31680a88f8953031, 157, AlgorithmType::OVERFLOW_SMALL},
+    {0x36f9bfb3af7b756f, 0xad5cd10396a21347, 159, AlgorithmType::OVERFLOW_SMALL},
+    {0xafebff0bcb24aafe, 0xf78f69a51539d749, 164, AlgorithmType::OVERFLOW_SMALL},
+    {0x232f33025bd42232, 0xfe4fe1edd10b9175, 165, AlgorithmType::OVERFLOW_SMALL},
+    {0x709709a125da0709, 0x9432d2f9035837dd, 170, AlgorithmType::OVERFLOW_SMALL},
+    {0xb424dc35095cd80f, 0x538484c19ef38c95, 174, AlgorithmType::OVERFLOW_SMALL},
+    {0x203af9ee756159b2, 0x1f3a6e0297ec1421, 178, AlgorithmType::OVERFLOW_LARGE},
+    {0x39a5652fb1137856, 0xd30baf9a1e626a6d, 179, AlgorithmType::OVERFLOW_SMALL},
+    {0xb877aa3236a4b449, 0x09befeb9fad487c3, 184, AlgorithmType::OVERFLOW_SMALL},
+    {0x2725dd1d243aba0e, 0x75fe645cc4873f9f, 188, AlgorithmType::OVERFLOW_LARGE},
+    {0x760f253edb4ab0d2, 0x9598f4f1e8361973, 190, AlgorithmType::OVERFLOW_SMALL},
+    {0x79ca10c9242235d5, 0x11e976394d79eb09, 195, AlgorithmType::OVERFLOW_LARGE},
+    {0x2e3b40a0e9b4f7dd, 0xa7edf82dd794bc07, 198, AlgorithmType::OVERFLOW_LARGE},
+    {0xf1c90080baf72cb1, 0x5324c68b12dd6339, 201, AlgorithmType::OVERFLOW_SMALL},
+    {0x305b66802564a289, 0xdd6dc14f03c5e0a5, 202, AlgorithmType::OVERFLOW_SMALL},
+    {0x9abe14cd44753b52, 0xc4926a9672793543, 207, AlgorithmType::OVERFLOW_SMALL},
+    {0xf79687aed3eec551, 0x3a83ddbd83f52205, 211, AlgorithmType::OVERFLOW_SMALL},
+    {0x63090312bb2c4eed, 0x4a9b257f019540cf, 213, AlgorithmType::OVERFLOW_SMALL},
+    {0x4f3a68dbc8f03f24, 0x3baf513267aa9a3f, 216, AlgorithmType::OVERFLOW_SMALL},
+    {0xfd87b5f28300ca0d, 0x8bca9d6e188853fd, 221, AlgorithmType::OVERFLOW_SMALL},
+    {0xcad2f7f5359a3b3e, 0x096ee45813a04331, 224, AlgorithmType::OVERFLOW_SMALL},
+    {0x4484bfeebc29f863, 0x424b06f3529a051b, 228, AlgorithmType::OVERFLOW_LARGE},
+    {0x39d66589687f9e9, 0x01d59f290ee19daf, 231, AlgorithmType::OVERFLOW_LARGE},
+    {0x9f623d5a8a732974, 0xcfbc31db4b0295e5, 235, AlgorithmType::OVERFLOW_LARGE},
+    {0xa6274bbdd0fadd61, 0xecb1ad8aeacdd58f, 237, AlgorithmType::OVERFLOW_SMALL},
+    {0x84ec3c97da624ab4, 0xbd5af13bef0b113f, 240, AlgorithmType::OVERFLOW_SMALL},
+    {0xd4ad2dbfc3d07787, 0x955e4ec64b44e865, 244, AlgorithmType::OVERFLOW_SMALL},
+    {0x5512124cb4b9c969, 0x6ef285e8eae85cf5, 246, AlgorithmType::OVERFLOW_SMALL},
+    {0x881cea14545c7575, 0x7e50d64177da2e55, 250, AlgorithmType::OVERFLOW_SMALL},
+    {0x6ce3ee76a9e3912a, 0xcb73de9ac6482511, 253, AlgorithmType::OVERFLOW_SMALL}};
 
 /** Powers of ten, used to multiply the denominator during division. */
 static constexpr uint128_t POWER_OF_TEN[39][2] = {{0, 0},
@@ -185,14 +199,23 @@ static constexpr uint128_t POWER_OF_TEN[39][2] = {{0, 0},
 
 /** Magic numbers for 128-bit division with specific constants. */
 std::unordered_map<uint128_t, MagicNumber128, Unsigned128BitHash> magic_map128_bit_constant_division = {
-    {5, {0xcccccccccccccccc, 0xcccccccccccccccd, 130, 0}}, {7, {0x2492492492492492, 0x4924924924924925, 131, 1}}};
+    {5, {0xcccccccccccccccc, 0xcccccccccccccccd, 130, AlgorithmType::OVERFLOW_SMALL}},
+    {7, {0x2492492492492492, 0x4924924924924925, 131, AlgorithmType::OVERFLOW_LARGE}}};
 
 /** Magic numbers for 256-bit division with specific constants. */
 std::unordered_map<uint128_t, MagicNumber256, Unsigned128BitHash> magic_map256_bit_constant_division = {
-    {5, {0xcccccccccccccccc, 0xcccccccccccccccc, 0xcccccccccccccccc, 0xcccccccccccccccd, 258, 0}},
-    {7, {0x2492492492492492, 0x4924924924924924, 0x9249249249249249, 0x2492492492492493, 259, 1}},
-    {777, {0xa8b098e00a8b098e, 0x00a8b098e00a8b09, 0x8e00a8b098e00a8b, 0x098e00a8b098e00b, 265, 0}},
-    {999, {0x6680a40106680a4, 0x0106680a40106680, 0xa40106680a401066, 0x80a40106680a4011, 266, 1}},
+    {5,
+     {0xcccccccccccccccc, 0xcccccccccccccccc, 0xcccccccccccccccc, 0xcccccccccccccccd, 258,
+      AlgorithmType::OVERFLOW_SMALL}},
+    {7,
+     {0x2492492492492492, 0x4924924924924924, 0x9249249249249249, 0x2492492492492493, 259,
+      AlgorithmType::OVERFLOW_LARGE}},
+    {777,
+     {0xa8b098e00a8b098e, 0x00a8b098e00a8b09, 0x8e00a8b098e00a8b, 0x098e00a8b098e00b, 265,
+      AlgorithmType::OVERFLOW_SMALL}},
+    {999,
+     {0x6680a40106680a4, 0x0106680a40106680, 0xa40106680a401066, 0x80a40106680a4011, 266,
+      AlgorithmType::OVERFLOW_LARGE}},
 };
 
 /** Powers of two, used during constant division of a decimal with a power of two. */
@@ -261,3 +284,5 @@ std::unordered_map<uint128_t, uint32_t, Unsigned128BitHash> power_two = {
     {0x4000000000000000, 62},
     {0x8000000000000000, 63},
 };
+
+}  // namespace libfixeypointy
