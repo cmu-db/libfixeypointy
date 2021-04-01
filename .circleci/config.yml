@@ -12,6 +12,8 @@ jobs:
             clang-format-8
             clang-tidy-8
             g++
+            git
+            valgrind
             python
      - checkout
      - run: mkdir build
