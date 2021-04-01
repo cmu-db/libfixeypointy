@@ -43,10 +43,10 @@ struct Unsigned128BitHash {
  */
 class MagicNumber128 {
  public:
-  uint128_t upper_;     ///< Upper half of 128 bit magic number
-  uint128_t lower_;     ///< Lower half of 128 bit magic number
-  uint32_t p_;          ///< p as defined in magic division.
-  AlgorithmType algo_;  ///< The overflow algorithm type.
+  uint64_t chunk0_;     /// Upper half of 128 bit magic number
+  uint64_t chunk1_;     /// Lower half of 128 bit magic number
+  uint32_t p_;          /// p as defined in magic division.
+  AlgorithmType algo_;  /// The overflow algorithm type.
 };
 
 /**
@@ -54,12 +54,12 @@ class MagicNumber128 {
  */
 class MagicNumber256 {
  public:
-  uint128_t a_;         ///< Highest 64 bits.
-  uint128_t b_;         ///< High middle 64 bits.
-  uint128_t c_;         ///< Low middle 64 bits.
-  uint128_t d_;         ///< Lowest 64 bits.
-  uint32_t p_;          ///< p as defined in magic division.
-  AlgorithmType algo_;  ///< The overflow algorithm type.
+  uint64_t chunk0_;     /// Highest 64 bits.
+  uint64_t chunk1_;     /// High middle 64 bits.
+  uint64_t chunk2_;     /// Low middle 64 bits.
+  uint64_t chunk3_;     /// Lowest 64 bits.
+  uint32_t p_;          /// p as defined in magic division.
+  AlgorithmType algo_;  /// The overflow algorithm type.
 };
 
 }  // namespace libfixeypointy

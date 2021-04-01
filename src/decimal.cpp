@@ -217,8 +217,8 @@ void Decimal::UnsignedDivideConstant128BitPowerOfTen(uint32_t exponent) {
   {
     uint128_t a = value_;
     uint128_t half_words_a[2] = {a & BOTTOM_MASK, (a & TOP_MASK) >> 64};
-    uint128_t half_words_b[2] = {MAGIC_MAP128_BIT_POWER_TEN[exponent].lower_,
-                                 MAGIC_MAP128_BIT_POWER_TEN[exponent].upper_};
+    uint128_t half_words_b[2] = {MAGIC_MAP128_BIT_POWER_TEN[exponent].chunk1_,
+                                 MAGIC_MAP128_BIT_POWER_TEN[exponent].chunk0_};
     // TODO(Rohan): Calculate only upper half
     CalculateMultiWordProduct128(half_words_a, half_words_b, half_words_result, 2, 2);
   }
@@ -260,8 +260,8 @@ void Decimal::UnsignedDivideConstant128Bit(uint128_t constant) {
     {
       uint128_t a = value_;
       uint128_t half_words_a[2] = {a & BOTTOM_MASK, (a & TOP_MASK) >> 64};
-      uint128_t half_words_b[2] = {MAGIC_CUSTOM_128BIT_CONSTANT_DIVISION[constant].lower_,
-                                   MAGIC_CUSTOM_128BIT_CONSTANT_DIVISION[constant].upper_};
+      uint128_t half_words_b[2] = {MAGIC_CUSTOM_128BIT_CONSTANT_DIVISION[constant].chunk1_,
+                                   MAGIC_CUSTOM_128BIT_CONSTANT_DIVISION[constant].chunk0_};
       // TODO(Rohan): Calculate only upper half
       CalculateMultiWordProduct128(half_words_a, half_words_b, half_words_result, 2, 2);
     }
@@ -369,10 +369,10 @@ void Decimal::SignedDivideWithDecimal(Decimal denominator, uint32_t denominator_
 
 uint128_t Decimal::UnsignedMagicDivideConstantNumerator256Bit(const uint128_t (&unsigned_dividend)[4],
                                                               uint128_t unsigned_constant) {
-  uint128_t magic[4] = {MAGIC_CUSTOM_256BIT_CONSTANT_DIVISION[unsigned_constant].d_,
-                        MAGIC_CUSTOM_256BIT_CONSTANT_DIVISION[unsigned_constant].c_,
-                        MAGIC_CUSTOM_256BIT_CONSTANT_DIVISION[unsigned_constant].b_,
-                        MAGIC_CUSTOM_256BIT_CONSTANT_DIVISION[unsigned_constant].a_};
+  uint128_t magic[4] = {MAGIC_CUSTOM_256BIT_CONSTANT_DIVISION[unsigned_constant].chunk3_,
+                        MAGIC_CUSTOM_256BIT_CONSTANT_DIVISION[unsigned_constant].chunk2_,
+                        MAGIC_CUSTOM_256BIT_CONSTANT_DIVISION[unsigned_constant].chunk1_,
+                        MAGIC_CUSTOM_256BIT_CONSTANT_DIVISION[unsigned_constant].chunk0_};
   uint32_t magic_p = MAGIC_CUSTOM_256BIT_CONSTANT_DIVISION[unsigned_constant].p_ - 256;
   AlgorithmType algo = MAGIC_CUSTOM_256BIT_CONSTANT_DIVISION[unsigned_constant].algo_;
 
