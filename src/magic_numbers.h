@@ -1,31 +1,15 @@
-/*
- * This file contains magic numbers as defined by Hacker's Delight [2E].
- * Magic numbers are used for fast integer division.
- */
+#pragma once
 
 #include <bits/stdc++.h>
 #include "common.h"
+#include "custom_magic_numbers.h"
 
+/**
+ * Hacker's Delight [2E Chapter 10 Integer Division By Constants] describes
+ * an algorithm for fast unsigned integer division through the use of
+ * "magic numbers" that satisfy nice mathematical properties.
+ */
 namespace libfixeypointy {
-
-/** A hash function for uint128_t values. */
-struct Unsigned128BitHash {
-  /**
-   * @param value The value to be hashed.
-   * @return The hashed value.
-   */
-  hash_t operator()(const uint128_t &value) const {
-    uint128_t x = value;
-    const uint64_t k_mul = 0x9ddfea08eb382d69ULL;
-    uint128_t low_mask = 0xFFFFFFFFFFFFFFFF;
-    uint64_t a = ((x & low_mask) ^ (x >> 64)) * k_mul;
-    a ^= (a >> 47);
-    uint64_t b = ((x >> 64) ^ a) * k_mul;
-    b ^= (b >> 47);
-    b *= k_mul;
-    return b;
-  }
-};
 
 /**
  * 256-bit magic numbers for division with powers of 10.
@@ -89,26 +73,6 @@ static constexpr std::pair<uint32_t, AlgorithmType> MAGIC_P_AND_ALGO_ARRAY[39] =
     {351, AlgorithmType::OVERFLOW_SMALL}, {359, AlgorithmType::OVERFLOW_LARGE}, {362, AlgorithmType::OVERFLOW_SMALL},
     {363, AlgorithmType::OVERFLOW_SMALL}, {367, AlgorithmType::OVERFLOW_SMALL}, {372, AlgorithmType::OVERFLOW_SMALL},
     {373, AlgorithmType::OVERFLOW_SMALL}, {379, AlgorithmType::OVERFLOW_LARGE}, {383, AlgorithmType::OVERFLOW_LARGE}};
-
-/** 128-bit magic numbers. See this file's header comment. */
-class MagicNumber128 {
- public:
-  uint128_t upper_;     ///< Upper half of 128 bit magic number
-  uint128_t lower_;     ///< Lower half of 128 bit magic number
-  uint32_t p_;          ///< p as defined in magic division.
-  AlgorithmType algo_;  ///< The algorithm type.
-};
-
-/** 256-bit magic numbers. See this file's header comment. */
-class MagicNumber256 {
- public:
-  uint128_t a_;         ///< Highest 64 bits.
-  uint128_t b_;         ///< High middle 64 bits.
-  uint128_t c_;         ///< Low middle 64 bits.
-  uint128_t d_;         ///< Lowest 64 bits.
-  uint32_t p_;          ///< p as defined in magic division.
-  AlgorithmType algo_;  ///< The algorithm type.
-};
 
 /** 128-bit magic numbers for powers of 10. */
 static constexpr MagicNumber128 MAGIC_MAP128_BIT_POWER_TEN[39] = {
@@ -193,29 +157,8 @@ static constexpr uint128_t POWER_OF_TEN[39][2] = {{0, 0},
                                                   {0x785ee10d5da46d9, 0x00f436a000000000},
                                                   {0x4b3b4ca85a86c47a, 0x098a224000000000}};
 
-/** Magic numbers for 128-bit division with specific constants. */
-std::unordered_map<uint128_t, MagicNumber128, Unsigned128BitHash> magic_map128_bit_constant_division = {
-    {5, {0xcccccccccccccccc, 0xcccccccccccccccd, 130, AlgorithmType::OVERFLOW_SMALL}},
-    {7, {0x2492492492492492, 0x4924924924924925, 131, AlgorithmType::OVERFLOW_LARGE}}};
-
-/** Magic numbers for 256-bit division with specific constants. */
-std::unordered_map<uint128_t, MagicNumber256, Unsigned128BitHash> magic_map256_bit_constant_division = {
-    {5,
-     {0xcccccccccccccccc, 0xcccccccccccccccc, 0xcccccccccccccccc, 0xcccccccccccccccd, 258,
-      AlgorithmType::OVERFLOW_SMALL}},
-    {7,
-     {0x2492492492492492, 0x4924924924924924, 0x9249249249249249, 0x2492492492492493, 259,
-      AlgorithmType::OVERFLOW_LARGE}},
-    {777,
-     {0xa8b098e00a8b098e, 0x00a8b098e00a8b09, 0x8e00a8b098e00a8b, 0x098e00a8b098e00b, 265,
-      AlgorithmType::OVERFLOW_SMALL}},
-    {999,
-     {0x6680a40106680a4, 0x0106680a40106680, 0xa40106680a401066, 0x80a40106680a4011, 266,
-      AlgorithmType::OVERFLOW_LARGE}},
-};
-
 /** Powers of two, used during constant division of a decimal with a power of two. */
-std::unordered_map<uint128_t, uint32_t, Unsigned128BitHash> power_two = {
+std::unordered_map<uint128_t, uint32_t, Unsigned128BitHash> POWER_OF_TWO = {
     {0x2, 1},
     {0x4, 2},
     {0x8, 3},
