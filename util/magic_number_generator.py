@@ -25,18 +25,18 @@ namespace libfixeypointy {
  * Magic numbers for 128-bit division with custom constants.
  */
 std::unordered_map<uint128_t, MagicNumber128, Unsigned128BitHash> MAGIC_CUSTOM_128BIT_CONSTANT_DIVISION = {
-// clang-format off
+    // clang-format off
 $MAP128
-// clang-format on
+    // clang-format on
 };
 
 /**
  * Magic numbers for 256-bit division with custom constants.
  */
 std::unordered_map<uint128_t, MagicNumber256, Unsigned128BitHash> MAGIC_CUSTOM_256BIT_CONSTANT_DIVISION = {
-// clang-format off
+    // clang-format off
 $MAP256
-// clang-format on
+    // clang-format on
 };
 
 }  // namespace libfixeypointy
