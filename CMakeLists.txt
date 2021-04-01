@@ -15,6 +15,9 @@ set(BUILD_SUPPORT_DIR "${CMAKE_SOURCE_DIR}/support")
 # DEPENDENCIES
 ################################################################################
 
+# CTest
+enable_testing()
+
 # clang-format
 find_program(CLANG_FORMAT_BIN
         NAMES clang-format clang-format-8
@@ -25,6 +28,26 @@ else()
     message(STATUS "libfixeypointy/main found clang-format at ${CLANG_FORMAT_BIN}")
 endif()
 
+# gmock gtest https://crascit.com/2015/07/25/cmake-gtest/
+configure_file(
+        "${BUILD_SUPPORT_DIR}/gtest_CMakeLists.txt.in"
+        googletest-download/CMakeLists.txt
+)
+execute_process(
+        COMMAND "${CMAKE_COMMAND}" -G "${CMAKE_GENERATOR}" .
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/googletest-download"
+)
+execute_process(
+        COMMAND "${CMAKE_COMMAND}" --build .
+        WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/googletest-download"
+)
+# don't override our compiler/linker options when building gtest
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)  
+add_subdirectory(
+        "${CMAKE_BINARY_DIR}/googletest-src"
+        "${CMAKE_BINARY_DIR}/googletest-build"
+)
+
 ################################################################################
 # COMPILER SETUP
 ################################################################################
@@ -32,6 +55,8 @@ endif()
 # Compiler flags.
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -Wextra -Werror -march=native")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+
+add_subdirectory(test)
 
 ################################################################################
 # MAKE TARGETS
