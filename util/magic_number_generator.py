@@ -25,14 +25,18 @@ namespace libfixeypointy {
  * Magic numbers for 128-bit division with custom constants.
  */
 std::unordered_map<uint128_t, MagicNumber128, Unsigned128BitHash> MAGIC_CUSTOM_128BIT_CONSTANT_DIVISION = {
+// clang-format off
 $MAP128
+// clang-format on
 };
 
 /**
  * Magic numbers for 256-bit division with custom constants.
  */
 std::unordered_map<uint128_t, MagicNumber256, Unsigned128BitHash> MAGIC_CUSTOM_256BIT_CONSTANT_DIVISION = {
+// clang-format off
 $MAP256
+// clang-format on
 };
 
 }  // namespace libfixeypointy
@@ -97,7 +101,7 @@ def format_entry(magic_number_output):
     for i in range(int(word_size / 64)):
         idx = i * 64
         chunks.append(hex(int(m_bits[idx:idx+64], 2)))
-    return " "*8 + "{{ {0}, {{{1}, {2}, {3} }} }}".format(d, ", ".join(chunks), p, alg)
+    return " "*4 + "{{ {0}, {{{1}, {2}, {3} }} }}".format(d, ", ".join(chunks), p, alg)
 
 
 if __name__ == "__main__":
