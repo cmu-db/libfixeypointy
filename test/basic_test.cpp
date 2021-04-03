@@ -1,9 +1,9 @@
-#include <vector>
-#include <string>
 #include <stdio.h>
+#include <string>
+#include <vector>
 
-#include "gtest/gtest.h"
 #include "decimal.h"
+#include "gtest/gtest.h"
 
 namespace libfixeypointy {
 
@@ -23,7 +23,7 @@ TEST(BasicTests, ToStringTest) {
 // NOLINTNEXTLINE
 TEST(BasicTests, ToStringLeadingZeroTest) {
   // Make sure we always include a leading zero even if the number is negative
-  std::vector<std::string> strings = { "0.001", "-0.001" };
+  std::vector<std::string> strings = {"0.001", "-0.001"};
   for (auto expected : strings) {
     Decimal d(expected, 3);
     auto result = d.ToString(3);

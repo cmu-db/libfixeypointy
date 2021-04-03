@@ -72,7 +72,8 @@ add_subdirectory(test)
 # clang-format
 # runs clang format and updates files in place.
 string(CONCAT LIBFIXEYPOINTY_FORMAT_DIRS
-        "${CMAKE_CURRENT_SOURCE_DIR}/src"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src,"
+        "${CMAKE_CURRENT_SOURCE_DIR}/test,"
 )
 add_custom_target(format ${BUILD_SUPPORT_DIR}/run_clang_format.py
         ${CLANG_FORMAT_BIN}
