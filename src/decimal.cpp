@@ -578,6 +578,8 @@ std::string Decimal::ToString(uint32_t scale) const {
     std::reverse(integral_string.begin(), integral_string.end());
     output.append(integral_string);
 
+    // Always include leading zero
+    if (output.empty() || output[0] == '-') output.push_back('0');
     output.push_back('.');
 
     std::reverse(fractional_string.begin(), fractional_string.end());
