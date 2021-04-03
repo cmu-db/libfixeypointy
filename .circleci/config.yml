@@ -21,7 +21,7 @@ jobs:
      - run: cd build && make -j
      - run: cd build && make check-format
      #- run: cd build && make check-clang-tidy
-     #- run: cd build && make check-tests
+     - run: cd build && make check-tests
 
 workflows:
   version: 2
