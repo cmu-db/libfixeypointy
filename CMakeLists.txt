@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.16)
 set(CMAKE_CXX_STANDARD 17)              # Compile as C++17
 set(CMAKE_CXX_STANDARD_REQUIRED ON)     # Require C++17 support
+set(BUILD_SHARED_LIBS ON)
 
 project(libfixeypointy
         VERSION 1.0
@@ -56,6 +57,12 @@ add_subdirectory(
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -Wextra -Werror -march=native")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls")
 
+set(BUSTUB_SRC_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src)
+include_directories(
+        ${LIBFIXEYPOINTY_SRC_INCLUDE_DIR}
+)
+include_directories(BEFORE src) # This is needed for gtest.
+
 add_subdirectory(test)
 
 ################################################################################
@@ -84,9 +91,8 @@ add_custom_target(check-format
         USES_TERMINAL
 )
 
-
 # Shared Library
-add_library(libfixeypointy src/decimal.h src/decimal.cpp src/magic_numbers.h)
+add_library(libfixeypointy SHARED src/decimal.cpp src/magic_numbers.h src/custom_magic_numbers.h)
 
 # Demo Program
 add_executable(demo src/demo.cpp)

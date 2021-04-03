@@ -1,4 +1,4 @@
-file(GLOB LIBFIXEYPOINTY_TEST_SOURCES "${PROJECT_SOURCE_DIR}/test/*/*test.cpp")
+file(GLOB LIBFIXEYPOINTY_TEST_SOURCES "${PROJECT_SOURCE_DIR}/test/*test.cpp")
 
 ################################################################################
 # DEPENDENCIES
@@ -45,7 +45,7 @@ foreach (libfixeypointy_test_source ${LIBFIXEYPOINTY_TEST_SOURCES})
     add_dependencies(build-tests ${libfixeypointy_test_name})
     add_dependencies(check-tests ${libfixeypointy_test_name})
 
-    target_link_libraries(${libfixeypointy_test_name} libfixeypointy_shared gtest gmock_main)
+    target_link_libraries(${libfixeypointy_test_name} libfixeypointy gtest gmock_main)
 
     # Set test target properties and dependencies.
     set_target_properties(${libfixeypointy_test_name}
