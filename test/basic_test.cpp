@@ -32,6 +32,20 @@ TEST(BasicTests, ToStringLeadingZeroTest) {
 }
 
 // NOLINTNEXTLINE
+TEST(BasicTests, HashTest) {
+  // Check that the hash of two decimals with the same value *AND* scale will
+  // be the same. You change the scale, then the underlying data is different
+  // and therefore the hash will be different.
+  for (int i = 2; i < (int)Decimal::MAX_SCALE - 1; i++) {
+    std::string val = "9.1" + std::string(i, '9');
+    Decimal d0(val, i);
+    hash_t expected = d0.Hash();
+    Decimal d1(val, i);
+    EXPECT_EQ(d1.Hash(), expected);
+  }
+}
+
+// NOLINTNEXTLINE
 TEST(BasicTests, NegationTest) {
   std::vector<std::string> strings = {"0.001", "-0.001"};
   int scale = 3;
@@ -61,6 +75,19 @@ TEST(BasicTests, AdditionTest) {
   for (int i = 1; i < (int)Decimal::MAX_SCALE - 1; i++) {
     Decimal d0("1.2", i);
     Decimal d1("2.1", i);
+    auto d2 = d0 + d1;
+    auto result = d2.ToString(i);
+    EXPECT_EQ(result, expected);
+    expected += "0";
+  }
+}
+
+// NOLINTNEXTLINE
+TEST(BasicTests, InplaceAdditionTest) {
+  std::string expected = "3.3";
+  for (int i = 1; i < (int)Decimal::MAX_SCALE - 1; i++) {
+    Decimal d0("1.2", i);
+    Decimal d1("2.1", i);
     d0 += d1;
     auto result = d0.ToString(i);
     EXPECT_EQ(result, expected);
@@ -72,10 +99,21 @@ TEST(BasicTests, AdditionTest) {
 TEST(BasicTests, SubtractionTest) {
   std::string expected = "0.0";
   for (int i = 1; i < (int)Decimal::MAX_SCALE - 1; i++) {
-    std::string value = "9.";
-    for (int j = 0; j <= i; j++) {
-      value += "9";
-    }
+    std::string value = "9." + std::string(i, '9');
+    Decimal d0(value, i);
+    Decimal d1(value, i);
+    auto d2 = d0 - d1;
+    auto result = d2.ToString(i);
+    EXPECT_EQ(result, expected);
+    expected += "0";
+  }
+}
+
+// NOLINTNEXTLINE
+TEST(BasicTests, InplaceSubtractionTest) {
+  std::string expected = "0.0";
+  for (int i = 1; i < (int)Decimal::MAX_SCALE - 1; i++) {
+    std::string value = "9." + std::string(i, '9');
     Decimal d0(value, i);
     Decimal d1(value, i);
     d0 -= d1;

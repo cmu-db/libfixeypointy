@@ -82,11 +82,18 @@ class Decimal {
   hash_t Hash() const { return Hash(1); }
 
   /**
+   * Add the encoded decimal to this decimal and produce a new decimal.
+   * @warning The other decimal value MUST be of the same scale.
+   * @param that The value to add.
+   * @return A new decimal value
+   */
+  const Decimal operator+(const NativeType &that) {
+    return Decimal(this->value_ + that);
+  }
+
+  /**
    * Add the encoded decimal value @em that to this decimal value.
-   *
-   * @warning   The other decimal value MUST be of the same scale.
-   *            This is currently resolved at runtime in the execution engine VM.
-   *
+   * @warning The other decimal value MUST be of the same scale.
    * @param that The value to add.
    * @return This decimal value.
    */
@@ -97,16 +104,23 @@ class Decimal {
 
   /**
    * Subtract the encoded decimal value @em that from this decimal value.
-   *
-   * @warning   The other decimal value MUST be of the same scale.
-   *            This is currently resolved at runtime in the execution engine VM.
-   *
+   * @warning The other decimal value MUST be of the same scale.
    * @param that The value to subtract.
    * @return This decimal value.
    */
   const Decimal &operator-=(const NativeType &that) {
     value_ -= that;
     return *this;
+  }
+
+  /**
+   * Subtract the encoded decimal to this decimal and produce a new decimal.
+   * @warning The other decimal value MUST be of the same scale.
+   * @param that The value to subtract.
+   * @return A new decimal value
+   */
+  const Decimal operator-(const NativeType &that) {
+    return Decimal(this->value_ - that);
   }
 
   /**
