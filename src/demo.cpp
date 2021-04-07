@@ -65,11 +65,11 @@ Decimal compute_result(DemoDecimal &decimal1, DemoDecimal &decimal2, const std::
   }
   // Multiplication
   else if (op == "*") {
-    result.SignedMultiplyWithDecimal(*decimal2.decimal, scale);
+    result.Multiply(*decimal2.decimal, scale);
   }
   // Division
   else if (op == "/") {
-    result.SignedDivideWithDecimal(*decimal2.decimal, scale);
+    result.Divide(*decimal2.decimal, scale);
   }
   // Unexpected!
   else {

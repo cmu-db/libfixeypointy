@@ -147,21 +147,53 @@ class Decimal {
   Decimal GetAbs();
 
   /**
-   * Divide the current decimal by the given decimal.
-   * The result is in the numerator's (current decimal's) scale.
-   * @param denominator             The decimal to divide by.
-   * @param denominator_scale       The scale of the denominator.
+   * Add the encoded decimal to this decimal and produce a new decimal.
+   * @warning The other decimal value MUST be of the same scale.
+   * @param that The value to add.
+   * @return A new decimal value
    */
-  void SignedDivideWithDecimal(Decimal denominator, uint32_t denominator_scale);
+  NativeType Add(Decimal other, uint32_t scale) const;
+
+  /**
+   * Subtract the encoded decimal to this decimal and produce a new decimal.
+   * @warning The other decimal value MUST be of the same scale.
+   * @param that The value to add.
+   * @return A new decimal value
+   */
+  NativeType Subtract(Decimal other, uint32_t scale) const;
 
   /**
    * Multiply the current decimal by the given decimal.
    * The result is in the higher scale of the current decimal and the
    * multiplier.
    * @param multiplier          The decimal to multiply by.
-   * @param lower_scale         The lower scale of the two decimals.
+   * @param scale         The lower scale of the two decimals.
    */
-  void SignedMultiplyWithDecimal(Decimal multiplier, uint32_t lower_scale);
+  void Multiply(Decimal multiplier, uint32_t scale);
+
+  /**
+   * Divide the current decimal by the given decimal.
+   * The result is in the numerator's (current decimal's) scale.
+   * @param denominator             The decimal to divide by.
+   * @param scale       The scale of the denominator.
+   */
+  void Divide(Decimal denominator, uint32_t scale);
+
+  /**
+   * Multiple the current decimal by a constant integer value.
+   * This method is faster than generating a decimal with the
+   * constant and then multiplying two decimals.
+   * @param value the constant to be multiplied with.
+   */
+  void MultiplyByConstant(int64_t value);
+
+  /**
+   * Divide the current decimal by the value provided.
+   * This method is faster than generating a decimal with the
+   * constant and then multiplying two decimals.
+   * @param value The value to divide by.
+   */
+  void DivideByConstant(int64_t value);
 
   /**
    * Match the scales of the two decimals by rescaling the less precise of
@@ -228,12 +260,6 @@ class Decimal {
                                                               uint128_t unsigned_constant);
 
   /**
-   * Divide the current decimal by the divisor provided.
-   * @param divisor         The divisor to divide by.
-   */
-  void SignedDivideWithConstant(int64_t divisor);
-
-  /**
    * Multiply the current decimal with an unsigned decimal.
    * The scale of the result depends on the scale provided.
    * @param unsigned_input  The input decimal to multiply against. Must be unsigned!
@@ -242,12 +268,6 @@ class Decimal {
    *                        To obtain lower scale result, pass in the higher scale of the operands.
    */
   void MultiplyAndSet(const Decimal &unsigned_input, uint32_t scale);
-
-  /**
-   * Signed version of MultiplyAndSet with a constant
-   * @param input the constant to be multiplied with.
-   */
-  void SignedMultiplyWithConstant(int64_t input);
 
   /**
    * Divide the current positive unsigned 128-bit integer by a power of ten.

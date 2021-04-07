@@ -273,12 +273,12 @@ void Decimal::UnsignedDivideConstant128Bit(uint128_t constant) {
   }
 }
 
-void Decimal::SignedMultiplyWithDecimal(Decimal multiplier, uint32_t lower_scale) {
+void Decimal::Multiply(Decimal multiplier, uint32_t scale) {
   // The method in Hacker Delight 2-14 is not used because shift needs to be agnostic of underlying T
   // Will be needed to change in the future when storage optimizations happen
   bool negative_result = (value_ < 0) != (multiplier.ToNative() < 0);
   value_ = value_ < 0 ? 0 - value_ : value_;
-  MultiplyAndSet(multiplier.GetAbs(), lower_scale);
+  MultiplyAndSet(multiplier.GetAbs(), scale);
   // Because we convert to positive above, if the sign changed, we overflowed.
   if (value_ < 0) {
     throw("Result overflow > 128 bits");
@@ -286,17 +286,17 @@ void Decimal::SignedMultiplyWithDecimal(Decimal multiplier, uint32_t lower_scale
   value_ = negative_result ? 0 - value_ : value_;
 }
 
-void Decimal::SignedMultiplyWithConstant(int64_t input) {
+void Decimal::MultiplyByConstant(int64_t value) {
   // The method in Hacker Delight 2-14 is not used because shift needs to be agnostic of underlying T
   // Will be needed to change in the future when storage optimizations happen
-  bool negative_result = (value_ < 0) != (input < 0);
+  bool negative_result = (value_ < 0) != (value < 0);
   value_ = value_ < 0 ? 0 - value_ : value_;
 
   // Calculate 256-bit multiplication result.
   uint128_t half_words_result[4];
   {
     uint128_t a = value_;
-    uint128_t b = input < 0 ? -input : input;
+    uint128_t b = value < 0 ? -value : value;
     uint128_t half_words_a[2] = {a & BOTTOM_MASK, (a & TOP_MASK) >> 64};
     uint128_t half_words_b[2] = {b & BOTTOM_MASK, (b & TOP_MASK) >> 64};
     CalculateMultiWordProduct128(half_words_a, half_words_b, half_words_result, 2, 2);
@@ -311,17 +311,17 @@ void Decimal::SignedMultiplyWithConstant(int64_t input) {
   value_ = negative_result ? 0 - value_ : value_;
 }
 
-void Decimal::SignedDivideWithConstant(int64_t divisor) {
+void Decimal::DivideByConstant(int64_t value) {
   // The method in Hacker Delight 2-14 is not used because shift needs to be agnostic of underlying T
   // Will be needed to change in the future when storage optimizations happen
-  bool negative_result = (value_ < 0) != (divisor < 0);
+  bool negative_result = (value_ < 0) != (value < 0);
   value_ = value_ < 0 ? 0 - value_ : value_;
-  uint128_t constant = divisor < 0 ? -divisor : divisor;
+  uint128_t constant = value < 0 ? -value : value;
   UnsignedDivideConstant128Bit(constant);
   value_ = negative_result ? 0 - value_ : value_;
 }
 
-void Decimal::SignedDivideWithDecimal(Decimal denominator, uint32_t denominator_scale) {
+void Decimal::Divide(Decimal denominator, uint32_t scale) {
   // 1. Multiply the dividend with 10^(denominator scale), with overflow checking.
   // 2. If overflow, divide by the denominator with multi-word 256-bit division.
   // 3. If no overflow, divide by the denominator with magic numbers if available, otherwise use 128-bit division.
@@ -340,7 +340,7 @@ void Decimal::SignedDivideWithDecimal(Decimal denominator, uint32_t denominator_
   uint128_t half_words_result[4];
   {
     uint128_t half_words_a[2] = {value_ & BOTTOM_MASK, (value_ & TOP_MASK) >> 64};
-    uint128_t half_words_b[2] = {POWER_OF_TEN[denominator_scale][1], POWER_OF_TEN[denominator_scale][0]};
+    uint128_t half_words_b[2] = {POWER_OF_TEN[scale][1], POWER_OF_TEN[scale][0]};
     CalculateMultiWordProduct128(half_words_a, half_words_b, half_words_result, 2, 2);
   }
 
