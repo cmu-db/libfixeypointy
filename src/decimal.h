@@ -164,21 +164,26 @@ class Decimal {
     NativeType intermediate_value;
     uint32_t new_scale;
     if (left_scale < right_scale) {
+      new_scale = right_scale;
       intermediate_value = left->ToNative();
-      new_scale = right_scale - left_scale;
-      for (uint32_t i = 0; i < new_scale; i++) {
+      auto adjust_factor = right_scale - left_scale;
+      for (uint32_t i = 0; i < adjust_factor; i++) {
         intermediate_value *= 10;
       }
       left->value_ = intermediate_value;
-    } else {
+    } else if (left_scale > right_scale) {
+      new_scale = left_scale;
       intermediate_value = right->ToNative();
-      new_scale = left_scale - right_scale;
-      for (uint32_t i = 0; i < new_scale; i++) {
+      auto adjust_factor = left_scale - right_scale;
+      for (uint32_t i = 0; i < adjust_factor; i++) {
         intermediate_value *= 10;
       }
       right->value_ = intermediate_value;
+    } else {
+      // The left_scale is the same as right_scale
+      new_scale = left_scale;
     }
-    return new_scale + 1;
+    return new_scale;
   }
 
  private:

@@ -32,6 +32,30 @@ TEST(BasicTests, ToStringLeadingZeroTest) {
 }
 
 // NOLINTNEXTLINE
+TEST(BasicTests, NegationTest) {
+  std::vector<std::string> strings = {"0.001", "-0.001"};
+  int scale = 3;
+  for (auto val : strings) {
+    Decimal orig(val, scale);
+    auto result = orig.GetNegation();
+    std::string expected = (val[0] == '-' ? val.substr(1) : "-" + val);
+    EXPECT_EQ(result.ToString(scale), expected);
+  }
+}
+
+// NOLINTNEXTLINE
+TEST(BasicTests, AbsTest) {
+  std::vector<std::string> strings = {"99990.09999", "-99990.09999"};
+  int scale = 5;
+  for (auto val : strings) {
+    Decimal orig(val, scale);
+    auto result = orig.GetAbs();
+    std::string expected = strings[0];
+    EXPECT_EQ(result.ToString(scale), expected);
+  }
+}
+
+// NOLINTNEXTLINE
 TEST(BasicTests, AdditionTest) {
   std::string expected = "3.3";
   for (int i = 1; i < (int)Decimal::MAX_SCALE - 1; i++) {

@@ -11,11 +11,20 @@
 using namespace libfixeypointy;
 
 struct DemoDecimal {
-  Decimal *decimal;
+  Decimal *decimal = nullptr;
   std::string orig_value;
   uint32_t orig_scale;
+
+  ~DemoDecimal() {
+    if (decimal != nullptr) delete decimal;
+  }
 };
 
+/**
+ *
+ * @param input
+ * @return
+ */
 DemoDecimal parse_decimal(std::stringstream &input) {
   std::string val;
   input >> val;
@@ -35,6 +44,14 @@ DemoDecimal parse_decimal(std::stringstream &input) {
   return result;
 }
 
+/**
+ *
+ * @param decimal1
+ * @param decimal2
+ * @param op
+ * @param scale
+ * @return
+ */
 Decimal compute_result(DemoDecimal &decimal1, DemoDecimal &decimal2, const std::string &op, const uint32_t scale) {
   Decimal result(*decimal1.decimal);
 
