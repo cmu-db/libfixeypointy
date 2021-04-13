@@ -283,14 +283,14 @@ void Decimal::MultiplyByConstant(const int64_t &value) {
     throw("Result overflow > 128 bits");
   }
 
-  value_ = negative_result ? 0 - value_ : value_;
+  value_ = (negative_result ? 0 - value_ : value_);
 }
 
 void Decimal::DivideByConstant(const int64_t &value) {
   // The method in Hacker Delight 2-14 is not used because shift needs to be agnostic of underlying T
   // Will be needed to change in the future when storage optimizations happen
   bool negative_result = (value_ < 0) != (value < 0);
-  value_ = value_ < 0 ? 0 - value_ : value_;
+  value_ = (value_ < 0 ? 0 - value_ : value_);
   uint128_t constant = value < 0 ? -value : value;
   UnsignedDivideConstant128Bit(constant);
   value_ = negative_result ? 0 - value_ : value_;
@@ -443,8 +443,8 @@ void Decimal::MultiplyAndSet(const Decimal &unsigned_input, ScaleType scale) {
   uint128_t half_words_result[4];
   {
     // Split the two inputs into half-words.
-    NativeType a = value_;
-    NativeType b = unsigned_input.ToNative();
+    uint128_t a = value_;
+    uint128_t b = unsigned_input.ToNative();
     uint128_t half_words_a[2] = {a & BOTTOM_MASK, (a & TOP_MASK) >> 64};
     uint128_t half_words_b[2] = {b & BOTTOM_MASK, (b & TOP_MASK) >> 64};
     CalculateMultiWordProduct128(half_words_a, half_words_b, half_words_result, 2, 2);
