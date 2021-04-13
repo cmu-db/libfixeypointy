@@ -13,13 +13,14 @@ namespace libfixeypointy {
  */
 class Decimal {
  public:
-  /** Underlying native data type. */
+  /** Underlying native data and scale factor types. */
   using NativeType = int128_t;
+  using ScaleType = int8_t;
 
   /** The default scale for a Decimal. */
   static constexpr uint32_t DEFAULT_SCALE = 18;
   /** The maximum scale supported by a Decimal. */
-  static constexpr uint32_t MAX_SCALE = 38;
+  static constexpr ScaleType MAX_SCALE = 38;
 
   /**
    * Create a decimal value using the given raw underlying encoded value.
@@ -45,14 +46,14 @@ class Decimal {
    * @param scale       Number of significant digits.
    *                    The scale must be <= MAX_SCALE.
    */
-  Decimal(std::string input, uint32_t scale);
+  Decimal(const std::string &input, const ScaleType &scale);
 
   /**
    * Convert an input string into a decimal representation, taking as many digits as possible.
    * @param input           The input string to convert.
    * @param[out] scale      The scale that the decimal was read with.
    */
-  Decimal(std::string input, uint32_t *scale);
+  Decimal(std::string input, ScaleType *scale);
 
   /**
    * @return The raw underlying encoded decimal value.
@@ -131,36 +132,38 @@ class Decimal {
    */
   std::string ToString(uint32_t scale) const;
 
-  /** @return The native representation of the decimal. */
+  /**
+   * @return The native representation of the decimal.
+   */
   NativeType ToNative() const { return value_; }
 
   /**
    * Compute the negative value of the current decimal
    * @return negative value
    */
-  Decimal GetNegation();
+  Decimal GetNegation() const;
 
   /**
    * Compute the absolute value (always positive) version of the current decimal.
    * @return absolute value
    */
-  Decimal GetAbs();
+  Decimal GetAbs() const;
 
   /**
    * Add the encoded decimal to this decimal and produce a new decimal.
    * @warning The other decimal value MUST be of the same scale.
-   * @param that The value to add.
+   * @param other The value to add.
    * @return A new decimal value
    */
-  NativeType Add(Decimal other, uint32_t scale) const;
+  void Add(const Decimal &other);
 
   /**
    * Subtract the encoded decimal to this decimal and produce a new decimal.
    * @warning The other decimal value MUST be of the same scale.
-   * @param that The value to add.
+   * @param other The value to add.
    * @return A new decimal value
    */
-  NativeType Subtract(Decimal other, uint32_t scale) const;
+  void Subtract(const Decimal &other);
 
   /**
    * Multiply the current decimal by the given decimal.
@@ -169,7 +172,7 @@ class Decimal {
    * @param multiplier          The decimal to multiply by.
    * @param scale         The lower scale of the two decimals.
    */
-  void Multiply(Decimal multiplier, uint32_t scale);
+  void Multiply(const Decimal &multiplier, const ScaleType &scale);
 
   /**
    * Divide the current decimal by the given decimal.
@@ -177,7 +180,7 @@ class Decimal {
    * @param denominator             The decimal to divide by.
    * @param scale       The scale of the denominator.
    */
-  void Divide(Decimal denominator, uint32_t scale);
+  void Divide(const Decimal &denominator, const ScaleType &scale);
 
   /**
    * Multiple the current decimal by a constant integer value.
@@ -185,7 +188,7 @@ class Decimal {
    * constant and then multiplying two decimals.
    * @param value the constant to be multiplied with.
    */
-  void MultiplyByConstant(int64_t value);
+  void MultiplyByConstant(const int64_t &value);
 
   /**
    * Divide the current decimal by the value provided.
@@ -193,7 +196,7 @@ class Decimal {
    * constant and then multiplying two decimals.
    * @param value The value to divide by.
    */
-  void DivideByConstant(int64_t value);
+  void DivideByConstant(const int64_t &value);
 
   /**
    * Match the scales of the two decimals by rescaling the less precise of
@@ -205,7 +208,7 @@ class Decimal {
    * @param right_scale         The scale of the right decimal value.
    * @return new_scale          The new scale that the decimals have been scaled to
    */
-  static uint32_t MatchScales(Decimal *left, Decimal *right, uint32_t left_scale, uint32_t right_scale) {
+  static uint32_t MatchScales(Decimal *left, Decimal *right, ScaleType left_scale, ScaleType right_scale) {
     // TODO(Rohan): Optimize this by performing a binary search.
     NativeType intermediate_value;
     uint32_t new_scale;
@@ -213,7 +216,7 @@ class Decimal {
       new_scale = right_scale;
       intermediate_value = left->ToNative();
       auto adjust_factor = right_scale - left_scale;
-      for (uint32_t i = 0; i < adjust_factor; i++) {
+      for (ScaleType i = 0; i < adjust_factor; i++) {
         intermediate_value *= 10;
       }
       left->value_ = intermediate_value;
@@ -221,7 +224,7 @@ class Decimal {
       new_scale = left_scale;
       intermediate_value = right->ToNative();
       auto adjust_factor = left_scale - right_scale;
-      for (uint32_t i = 0; i < adjust_factor; i++) {
+      for (ScaleType i = 0; i < adjust_factor; i++) {
         intermediate_value *= 10;
       }
       right->value_ = intermediate_value;
@@ -256,7 +259,7 @@ class Decimal {
    * @param unsigned_constant   The 128-bit unsigned divisor.
    * @return                    The result of the division.
    */
-  static uint128_t UnsignedMagicDivideConstantNumerator256Bit(const uint128_t (&unsigned_dividend)[4],
+  uint128_t UnsignedMagicDivideConstantNumerator256Bit(const uint128_t (&unsigned_dividend)[4],
                                                               uint128_t unsigned_constant);
 
   /**
@@ -267,7 +270,7 @@ class Decimal {
    *                        To obtain higher scale result, pass in the lower scale of the operands.
    *                        To obtain lower scale result, pass in the higher scale of the operands.
    */
-  void MultiplyAndSet(const Decimal &unsigned_input, uint32_t scale);
+  void MultiplyAndSet(const Decimal &unsigned_input, ScaleType scale);
 
   /**
    * Divide the current positive unsigned 128-bit integer by a power of ten.
@@ -277,6 +280,30 @@ class Decimal {
    * @param exponent The exponent of the power of ten to divide by. (i in 10^i)
    */
   void UnsignedDivideConstant128BitPowerOfTen(uint32_t exponent);
+
+  /**
+   *
+   * @param u1
+   * @param u0
+   * @param v
+   * @return
+   */
+  uint128_t CalculateUnsignedLongDivision128(uint128_t u1, uint128_t u0, uint128_t v);
+
+  /**
+   *
+   * @param half_words_a
+   * @param half_words_b
+   * @param half_words_result
+   * @param m
+   * @param n
+   */
+  void CalculateMultiWordProduct128(const uint128_t *const half_words_a,
+                                    const uint128_t *const half_words_b,
+                                    uint128_t *half_words_result,
+                                    uint32_t m,
+                                    uint32_t n) const;
+
 };
 
 }  // namespace libfixeypointy
