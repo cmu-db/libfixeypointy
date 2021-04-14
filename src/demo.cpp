@@ -35,7 +35,7 @@ DemoDecimal parse_decimal(std::stringstream &input) {
   auto decimal = val.substr(0, position);
 
   // If there is no delimiter, then we will just use '1' for the scale
-  uint32_t scale = 1;
+  uint32_t scale = Decimal::DEFAULT_SCALE;
   if (position != std::string::npos) {
     scale = std::stoi(val.substr(position + 1));
   }

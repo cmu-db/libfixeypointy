@@ -239,14 +239,9 @@ static uint32_t GetNumLeadingZeroesAssumingNonZero(uint128_t num) {
   return retval[idx];
 }
 
+void Decimal::Add(const Decimal &other) { value_ += other.value_; }
 
-void Decimal::Add(const Decimal &other) {
-  value_ += other.value_;
-}
-
-void Decimal::Subtract(const Decimal &other) {
-  value_ -= other.value_;
-}
+void Decimal::Subtract(const Decimal &other) { value_ -= other.value_; }
 
 void Decimal::Multiply(const Decimal &multiplier, const ScaleType &scale) {
   // The method in Hacker Delight 2-14 is not used because shift needs to be agnostic of underlying T
@@ -324,8 +319,8 @@ void Decimal::Divide(const Decimal &denominator, const ScaleType &scale) {
     value_ = half_words_result[0] | (half_words_result[1] << 64);
     UnsignedDivideConstant128Bit(constant);
   } else if (MAGIC_CUSTOM_256BIT_CONSTANT_DIVISION.count(constant) > 0) {
-      // 3. If no overflow, and have magic numbers, use magic numbers.
-      value_ = UnsignedMagicDivideConstantNumerator256Bit(half_words_result, constant);
+    // 3. If no overflow, and have magic numbers, use magic numbers.
+    value_ = UnsignedMagicDivideConstantNumerator256Bit(half_words_result, constant);
   } else {
     // 4. If no overflow, and no magic numbers, divide by the denominator with 128-bit division.
     value_ = CalculateUnsignedLongDivision128(half_words_result[2] | (half_words_result[3] << 64),
@@ -339,7 +334,6 @@ void Decimal::Divide(const Decimal &denominator, const ScaleType &scale) {
 
   value_ = (negative_result ? 0 - value_ : value_);
 }
-
 
 /** Some code that was refactored out of Rohan's stuff. Here be dragons. */
 Decimal::NativeType DecimalComputeMagicNumbers128(const uint128_t (&half_words_result)[4], AlgorithmType algo,
@@ -371,63 +365,6 @@ Decimal::NativeType DecimalComputeMagicNumbers128(const uint128_t (&half_words_r
   }
 }
 
-/** Some code that was refactored out of Rohan's stuff. Here be dragons. */
-Decimal::NativeType Decimal::DecimalComputeMagicNumbers256(const uint128_t (&a)[4], const uint128_t (&b)[4], AlgorithmType algo,
-                                                  uint32_t magic_p) {
-  // Hacker's Delight [2E Chapter 10 Integer Division by Constants]
-  uint128_t half_words_magic_result[8];
-
-  if (algo == AlgorithmType::OVERFLOW_SMALL) {
-    // Overflow Algorithm 1 - Magic number is < 2^256
-
-    // Magic Result
-    // TODO(Rohan): Make optimization to calculate only upper half of the word
-    CalculateMultiWordProduct128(a, b, half_words_magic_result, 4, 4);
-    // Get the higher order result
-    uint128_t result_lower = half_words_magic_result[4] | (half_words_magic_result[5] << 64);
-    uint128_t result_upper = half_words_magic_result[6] | (half_words_magic_result[7] << 64);
-
-    uint128_t overflow_checker = result_upper >> magic_p;
-    if (overflow_checker > 0) {
-      // Result will overflow from 128 bits
-      throw("Result overflow > 128 bits");
-    }
-
-    result_lower = result_lower >> magic_p;
-    result_upper = result_upper << (128 - magic_p);
-    return result_lower | result_upper;
-  }
-  // Overflow Algorithm 2 - Magic number is >= 2^256
-
-  // TODO(Rohan): Make optimization to calculate only upper half of the word
-  CalculateMultiWordProduct128(a, b, half_words_magic_result, 4, 4);
-  // Get the higher order result
-  uint128_t result_lower = a[0] | (a[1] << 64);
-  uint128_t result_upper = a[2] | (a[3] << 64);
-
-  uint128_t add_lower = half_words_magic_result[4] | (half_words_magic_result[5] << 64);
-  uint128_t add_upper = half_words_magic_result[6] | (half_words_magic_result[7] << 64);
-
-  // Perform addition
-  result_lower += add_lower;
-  result_upper += add_upper;
-  // carry bit using conditional instructions
-  result_upper += static_cast<uint128_t>(result_lower < add_lower);
-
-  uint128_t overflow_checker = result_upper >> magic_p;
-  if ((overflow_checker > 0) || (result_upper < add_upper)) {
-    // Result will overflow from 128 bits
-    throw("Result overflow > 128 bits");
-  }
-
-  // We know that we only retain the lower 128 bits so there is no need of shri
-  // We can safely drop the additional carry bit
-  result_lower = result_lower >> magic_p;
-  result_upper = result_upper << (128 - magic_p);
-  return result_lower | result_upper;
-}
-
-
 Decimal Decimal::GetNegation() const { return Decimal(-value_); }
 
 Decimal Decimal::GetAbs() const { return value_ < 0 ? Decimal(-value_) : Decimal(value_); }
@@ -451,7 +388,7 @@ void Decimal::MultiplyAndSet(const Decimal &unsigned_input, ScaleType scale) {
   if (half_words_result[2] == 0 && half_words_result[3] == 0) {
     // TODO(Rohan): Optimize by sending in an array of half words
     value_ = half_words_result[0] | (half_words_result[1] << 64);
-    UnsignedDivideConstant128BitPowerOfTen(scale);
+    DivideByConstantPowerOfTen128(scale);
     return;
   }
 
@@ -460,10 +397,10 @@ void Decimal::MultiplyAndSet(const Decimal &unsigned_input, ScaleType scale) {
   uint32_t magic_p = MAGIC_P_AND_ALGO_ARRAY[scale].first - 256;
   AlgorithmType algo = MAGIC_P_AND_ALGO_ARRAY[scale].second;
 
-  value_ = DecimalComputeMagicNumbers256(half_words_result, magic, algo, magic_p);
+  value_ = DivideByMagicNumbers256(half_words_result, magic, algo, magic_p);
 }
 
-void Decimal::UnsignedDivideConstant128BitPowerOfTen(uint32_t exponent) {
+void Decimal::DivideByConstantPowerOfTen128(uint32_t exponent) {
   // Magic number division from Hacker's Delight [2E 10-9 Unsigned Division].
 
   // Calculate 256-bit multiplication result.
@@ -527,8 +464,6 @@ void Decimal::UnsignedDivideConstant128Bit(uint128_t constant) {
   }
 }
 
-
-
 uint128_t Decimal::UnsignedMagicDivideConstantNumerator256Bit(const uint128_t (&unsigned_dividend)[4],
                                                               uint128_t unsigned_constant) {
   uint128_t magic[4] = {MAGIC_CUSTOM_256BIT_CONSTANT_DIVISION[unsigned_constant].chunk3_,
@@ -538,7 +473,7 @@ uint128_t Decimal::UnsignedMagicDivideConstantNumerator256Bit(const uint128_t (&
   uint32_t magic_p = MAGIC_CUSTOM_256BIT_CONSTANT_DIVISION[unsigned_constant].p_ - 256;
   AlgorithmType algo = MAGIC_CUSTOM_256BIT_CONSTANT_DIVISION[unsigned_constant].algo_;
 
-  return DecimalComputeMagicNumbers256(unsigned_dividend, magic, algo, magic_p);
+  return DivideByMagicNumbers256(unsigned_dividend, magic, algo, magic_p);
 }
 
 uint128_t Decimal::CalculateUnsignedLongDivision128(uint128_t u1, uint128_t u0, uint128_t v) {
@@ -595,7 +530,7 @@ uint128_t Decimal::CalculateUnsignedLongDivision128(uint128_t u1, uint128_t u0, 
 }
 
 void Decimal::CalculateMultiWordProduct128(const uint128_t *const half_words_a, const uint128_t *const half_words_b,
-                                  uint128_t *half_words_result, uint32_t m, uint32_t n) const {
+                                           uint128_t *half_words_result, uint32_t m, uint32_t n) const {
   // Hacker's Delight [2E Figure 8-1]
   uint128_t k, t;
   uint32_t i, j;
@@ -612,5 +547,68 @@ void Decimal::CalculateMultiWordProduct128(const uint128_t *const half_words_a, 
   }
 }
 
+/** Some code that was refactored out of Rohan's stuff. Here be dragons. */
+Decimal::NativeType Decimal::DivideByMagicNumbers256(const uint128_t (&a)[4], const uint128_t (&b)[4],
+                                                     AlgorithmType algo, uint32_t magic_p) {
+  // Hacker's Delight [2E Chapter 10 Integer Division by Constants]
+  uint128_t half_words_magic_result[8];
+  NativeType final_result;
+
+  switch (algo) {
+    // Overflow Algorithm 1 - Magic number is < 2^256
+    case AlgorithmType::OVERFLOW_SMALL: {
+      // Magic Result
+      // TODO(Rohan): Make optimization to calculate only upper half of the word
+      CalculateMultiWordProduct128(a, b, half_words_magic_result, 4, 4);
+      // Get the higher order result
+      uint128_t result_lower = half_words_magic_result[4] | (half_words_magic_result[5] << 64);
+      uint128_t result_upper = half_words_magic_result[6] | (half_words_magic_result[7] << 64);
+
+      uint128_t overflow_checker = result_upper >> magic_p;
+      if (overflow_checker > 0) {
+        // Result will overflow from 128 bits
+        throw("Result overflow > 128 bits");
+      }
+
+      result_lower = result_lower >> magic_p;
+      result_upper = result_upper << (128 - magic_p);
+      final_result = result_lower | result_upper;
+      break;
+    }
+    // Overflow Algorithm 2 - Magic number is >= 2^256
+    case AlgorithmType::OVERFLOW_LARGE: {
+      // TODO(Rohan): Make optimization to calculate only upper half of the word
+      CalculateMultiWordProduct128(a, b, half_words_magic_result, 4, 4);
+      // Get the higher order result
+      uint128_t result_lower = a[0] | (a[1] << 64);
+      uint128_t result_upper = a[2] | (a[3] << 64);
+
+      uint128_t add_lower = half_words_magic_result[4] | (half_words_magic_result[5] << 64);
+      uint128_t add_upper = half_words_magic_result[6] | (half_words_magic_result[7] << 64);
+
+      // Perform addition
+      result_lower += add_lower;
+      result_upper += add_upper;
+      // carry bit using conditional instructions
+      result_upper += static_cast<uint128_t>(result_lower < add_lower);
+
+      uint128_t overflow_checker = result_upper >> magic_p;
+      if ((overflow_checker > 0) || (result_upper < add_upper)) {
+        // Result will overflow from 128 bits
+        throw("Result overflow > 128 bits");
+      }
+
+      // We know that we only retain the lower 128 bits so there is no need of shri
+      // We can safely drop the additional carry bit
+      result_lower = result_lower >> magic_p;
+      result_upper = result_upper << (128 - magic_p);
+      final_result = result_lower | result_upper;
+    }
+    default: {
+      throw("Unsupported overflow algorithm type");
+    }
+  }
+  return (final_result);
+}
 
 }  // namespace libfixeypointy

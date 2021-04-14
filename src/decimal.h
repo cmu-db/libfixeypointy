@@ -88,9 +88,7 @@ class Decimal {
    * @param that The value to add.
    * @return A new decimal value
    */
-  const Decimal operator+(const NativeType &that) {
-    return Decimal(this->value_ + that);
-  }
+  const Decimal operator+(const NativeType &that) { return Decimal(this->value_ + that); }
 
   /**
    * Add the encoded decimal value @em that to this decimal value.
@@ -120,9 +118,7 @@ class Decimal {
    * @param that The value to subtract.
    * @return A new decimal value
    */
-  const Decimal operator-(const NativeType &that) {
-    return Decimal(this->value_ - that);
-  }
+  const Decimal operator-(const NativeType &that) { return Decimal(this->value_ - that); }
 
   /**
    * Get the string representation of the current decimal. Requires knowing the scale.
@@ -260,7 +256,7 @@ class Decimal {
    * @return                    The result of the division.
    */
   uint128_t UnsignedMagicDivideConstantNumerator256Bit(const uint128_t (&unsigned_dividend)[4],
-                                                              uint128_t unsigned_constant);
+                                                       uint128_t unsigned_constant);
 
   /**
    * Multiply the current decimal with an unsigned decimal.
@@ -279,7 +275,7 @@ class Decimal {
    *
    * @param exponent The exponent of the power of ten to divide by. (i in 10^i)
    */
-  void UnsignedDivideConstant128BitPowerOfTen(uint32_t exponent);
+  void DivideByConstantPowerOfTen128(uint32_t exponent);
 
   /**
    *
@@ -298,11 +294,8 @@ class Decimal {
    * @param m
    * @param n
    */
-  void CalculateMultiWordProduct128(const uint128_t *const half_words_a,
-                                    const uint128_t *const half_words_b,
-                                    uint128_t *half_words_result,
-                                    uint32_t m,
-                                    uint32_t n) const;
+  void CalculateMultiWordProduct128(const uint128_t *const half_words_a, const uint128_t *const half_words_b,
+                                    uint128_t *half_words_result, uint32_t m, uint32_t n) const;
 
   /**
    *
@@ -312,9 +305,8 @@ class Decimal {
    * @param magic_p
    * @return
    */
-  NativeType DecimalComputeMagicNumbers256(const uint128_t (&a)[4], const uint128_t (&b)[4], AlgorithmType algo,
-                                                    uint32_t magic_p);
-
+  NativeType DivideByMagicNumbers256(const uint128_t (&a)[4], const uint128_t (&b)[4], AlgorithmType algo,
+                                     uint32_t magic_p);
 };
 
 }  // namespace libfixeypointy
