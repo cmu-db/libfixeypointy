@@ -304,6 +304,17 @@ class Decimal {
                                     uint32_t m,
                                     uint32_t n) const;
 
+  /**
+   *
+   * @param a
+   * @param b
+   * @param algo
+   * @param magic_p
+   * @return
+   */
+  NativeType DecimalComputeMagicNumbers256(const uint128_t (&a)[4], const uint128_t (&b)[4], AlgorithmType algo,
+                                                    uint32_t magic_p);
+
 };
 
 }  // namespace libfixeypointy

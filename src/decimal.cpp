@@ -325,7 +325,7 @@ void Decimal::Divide(const Decimal &denominator, const ScaleType &scale) {
     UnsignedDivideConstant128Bit(constant);
   } else if (MAGIC_CUSTOM_256BIT_CONSTANT_DIVISION.count(constant) > 0) {
       // 3. If no overflow, and have magic numbers, use magic numbers.
-      value_ = Decimal::UnsignedMagicDivideConstantNumerator256Bit(half_words_result, constant);
+      value_ = UnsignedMagicDivideConstantNumerator256Bit(half_words_result, constant);
   } else {
     // 4. If no overflow, and no magic numbers, divide by the denominator with 128-bit division.
     value_ = CalculateUnsignedLongDivision128(half_words_result[2] | (half_words_result[3] << 64),
@@ -371,10 +371,8 @@ Decimal::NativeType DecimalComputeMagicNumbers128(const uint128_t (&half_words_r
   }
 }
 
-void CalculateMultiWordProduct128(const uint128_t (&)[4], const uint128_t (&)[4], uint128_t pInt2[8],
-                                  int i, int i1);
 /** Some code that was refactored out of Rohan's stuff. Here be dragons. */
-Decimal::NativeType DecimalComputeMagicNumbers256(const uint128_t (&a)[4], const uint128_t (&b)[4], AlgorithmType algo,
+Decimal::NativeType Decimal::DecimalComputeMagicNumbers256(const uint128_t (&a)[4], const uint128_t (&b)[4], AlgorithmType algo,
                                                   uint32_t magic_p) {
   // Hacker's Delight [2E Chapter 10 Integer Division by Constants]
   uint128_t half_words_magic_result[8];
