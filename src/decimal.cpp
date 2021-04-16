@@ -603,6 +603,7 @@ Decimal::NativeType Decimal::DivideByMagicNumbers256(const uint128_t (&a)[4], co
       result_lower = result_lower >> magic_p;
       result_upper = result_upper << (128 - magic_p);
       final_result = result_lower | result_upper;
+      break;
     }
     default: {
       throw("Unsupported overflow algorithm type");
