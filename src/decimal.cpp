@@ -9,7 +9,12 @@ Decimal::Decimal(std::string input, ScaleType *scale) : value_(0) {
     throw std::runtime_error("Invalid empty input string '" + input + "'");
   }
 
+  // We are going to parse the input string to extract the decimal
+  // We use this to keep track of the position in the string.
   uint32_t pos = 0;
+
+  // If the first character is a minus sign, then we obviously have
+  // a negative number.
   bool is_negative = false;
   if (input[pos] == '-') {
     pos++;
@@ -25,15 +30,25 @@ Decimal::Decimal(std::string input, ScaleType *scale) : value_(0) {
     pos++;
   }
 
+  // If the position before decimal point is the last number,
+  // then there is no fractional part
   if (pos == input.size()) {
+    // So, if it is negative, we can multiply by -1 directly
     if (is_negative) {
       value_ = -value_;
     }
+    // Also, the scale is zero
     *scale = 0;
+    // Then, we can return
     return;
   }
+
+  // If not, this means it must be decimal point
+  // So, skip the point to parse the fractional part
   pos++;
 
+  // If there is no fractional part after decimal point,
+  // then do the same thing as above
   if (pos == input.size()) {
     value_ /= 10;
     if (is_negative) {
@@ -43,7 +58,10 @@ Decimal::Decimal(std::string input, ScaleType *scale) : value_(0) {
     return;
   }
 
+  // Now, we need scale
   *scale = 0;
+
+  // Number after decimal point
   while (pos < input.size()) {
     value_ += input[pos] - '0';
     if (pos < input.size() - 1) {
@@ -177,11 +195,14 @@ Decimal::Decimal(const std::string &input, const ScaleType &scale) : value_(0) {
 std::string Decimal::ToString(uint32_t scale) const {
   std::string output;
   int128_t value = value_;
+
+  // If negative, put - sign
   if (value < 0) {
     output.push_back('-');
     value = 0 - value;
   }
 
+  // If there is scale, there must be a fractional part
   if (scale != 0) {
     int128_t fractional = value;
     std::string fractional_string;
@@ -239,45 +260,118 @@ static uint32_t GetNumLeadingZeroesAssumingNonZero(uint128_t num) {
   return retval[idx];
 }
 
-void Decimal::Add(const Decimal &other) { value_ += other.value_; }
+void Decimal::Add(const Decimal &other) {
+  // TODO(Guide): Implementation with multiple branches maybe not performant, try reducing branches
+  // If both values are positive, it is possible to get overflowed
+  if (value_ > 0 && other.value_ > 0) {
+    // Compute the maximum and safe value for other
+    // E.g., 63 - 62 = 1
+    // So, if other = 1, 62 + 1 = 63 (safe)
+    // But if other = 2 (> 1), 62 + 2 = 64 (overflowed)
+    int128_t other_bound = std::numeric_limits<__int128>::max() - value_;
+    if (other.value_ > other_bound) {
+      throw("Result overflow > 128 bits");
+    }
+  }
 
-void Decimal::Subtract(const Decimal &other) { value_ -= other.value_; }
+  // If both values are negative, same as above
+  else if (value_ < 0 && other.value_ < 0) {
+    // Compute the minimum and safe value for other
+    // E.g., -64 - -63 = -1
+    // So, if other = -1, -63 + -1 = -64 (safe)
+    // But if other = -2 (< -1), -63 + -2 = -65 (overflowed)
+    int128_t other_bound = std::numeric_limits<__int128>::min() - value_;
+    if (other.value_ < other_bound) {
+      throw("Result overflow > 128 bits");
+    }
+  }
+
+  // Otherwise, it is impossible to overflow
+  value_ += other.value_;
+}
+
+void Decimal::Subtract(const Decimal &other) { 
+  // TODO(Guide): Implementation with multiple branches maybe not performant, try reducing branches
+  // If the first value is positive and the second value is negative,
+  // it is possible to get overflowed
+  if (value_ > 0 && other.value_ < 0) {
+    // Compute the maximum value for other
+    // E.g., 62 - 63 = -1
+    // So, if other = -1, 62 - -1 = 63 (safe)
+    // But if other = -2 (< -1), 62 - -2 = 64 (overflowed)
+    int128_t other_bound = value_ - std::numeric_limits<__int128>::max();
+    if (other.value_ < other_bound) {
+      throw("Result overflow > 128 bits");
+    }
+  }
+
+  // If the first value is negative and the second value is positive,
+  // same as above
+  else if (value_ < 0 && other.value_ > 0) {
+    // Compute the maximum value for other
+    // E.g., -63 - -64 = 1
+    // So, if other = 1, -63 - 1 = -64 (safe)
+    // But if other = 2 (> 1), -63 - 2 = -65 (overflowed)
+    int128_t other_bound = value_ - std::numeric_limits<__int128>::min();
+    if (other.value_ > other_bound) {
+      throw("Result overflow > 128 bits");
+    }
+  }
+
+  // Otherwise, it is impossible to overflow
+  value_ -= other.value_;
+}
 
 void Decimal::Multiply(const Decimal &multiplier, const ScaleType &scale) {
   // The method in Hacker Delight 2-14 is not used because shift needs to be agnostic of underlying T
   // Will be needed to change in the future when storage optimizations happen
+  // Save the sign of the result since we want to multiply regardless of the sign
   bool negative_result = (value_ < 0) != (multiplier.ToNative() < 0);
+  // Extract the absolute value of the first decimal
   value_ = (value_ < 0 ? 0 - value_ : value_);
+  // Compute multiplication
   MultiplyAndSet(multiplier.GetAbs(), scale);
   // Because we convert to positive above, if the sign changed, we overflowed.
   if (value_ < 0) {
     throw("Result overflow > 128 bits");
   }
+  // Apply the sign we saved at the beginning
   value_ = negative_result ? 0 - value_ : value_;
 }
 
 void Decimal::MultiplyByConstant(const int64_t &value) {
   // The method in Hacker Delight 2-14 is not used because shift needs to be agnostic of underlying T
   // Will be needed to change in the future when storage optimizations happen
-  bool negative_result = (value_ < 0) != (value < 0);
-  value_ = value_ < 0 ? 0 - value_ : value_;
+  // Save the sign of the result since we want to multiply regardless of the sign
+  bool negative_result = (value_ < 0) != (multiplier.ToNative() < 0);
+  // Extract the absolute value of the first decimal
+  value_ = (value_ < 0 ? 0 - value_ : value_);
 
   // Calculate 256-bit multiplication result.
   uint128_t half_words_result[4];
   {
     uint128_t a = value_;
+    // Extract the absolute value of the second decimal
     uint128_t b = value < 0 ? -value : value;
+    // Split each decimal into 2 half words using BOTTOM_MASK and TOP_MASK
+    // E.g., 0b11001010 -> {0b1010, 0b1100}
     uint128_t half_words_a[2] = {a & BOTTOM_MASK, (a & TOP_MASK) >> 64};
     uint128_t half_words_b[2] = {b & BOTTOM_MASK, (b & TOP_MASK) >> 64};
+    // Compute multiplication
     CalculateMultiWordProduct128(half_words_a, half_words_b, half_words_result, 2, 2);
   }
 
+  // The multiplication is overflowed if the higher word (128-bit) is not zero
+  // TODO(Guide): Do not forget that the original decimals contain signs
+  // So, it may be possible that we may need to check the lower word
+  // Only lower 127 bits are safe to overflow
   if (half_words_result[2] == 0 && half_words_result[3] == 0) {
     value_ = half_words_result[0] | (half_words_result[1] << 64);
   } else {
     throw("Result overflow > 128 bits");
   }
 
+  // Apply the sign we saved at the beginning
   value_ = (negative_result ? 0 - value_ : value_);
 }
 
