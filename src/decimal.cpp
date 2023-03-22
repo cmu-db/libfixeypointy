@@ -271,7 +271,7 @@ void Decimal::Add(const Decimal &other) {
     // But if other = 2 (> 1), 62 + 2 = 64 (overflowed)
     int128_t other_bound = std::numeric_limits<__int128>::max() - value_;
     if (other.value_ > other_bound) {
-      throw("Result overflow > 128 bits");
+      throw std::runtime_error("Result overflow > 128 bits");
     }
   }
 
@@ -283,7 +283,7 @@ void Decimal::Add(const Decimal &other) {
     // But if other = -2 (< -1), -63 + -2 = -65 (overflowed)
     int128_t other_bound = std::numeric_limits<__int128>::min() - value_;
     if (other.value_ < other_bound) {
-      throw("Result overflow > 128 bits");
+      throw std::runtime_error("Result overflow > 128 bits");
     }
   }
 
@@ -302,7 +302,7 @@ void Decimal::Subtract(const Decimal &other) {
     // But if other = -2 (< -1), 62 - -2 = 64 (overflowed)
     int128_t other_bound = value_ - std::numeric_limits<__int128>::max();
     if (other.value_ < other_bound) {
-      throw("Result overflow > 128 bits");
+      throw std::runtime_error("Result overflow > 128 bits");
     }
   }
 
@@ -315,7 +315,7 @@ void Decimal::Subtract(const Decimal &other) {
     // But if other = 2 (> 1), -63 - 2 = -65 (overflowed)
     int128_t other_bound = value_ - std::numeric_limits<__int128>::min();
     if (other.value_ > other_bound) {
-      throw("Result overflow > 128 bits");
+      throw std::runtime_error("Result overflow > 128 bits");
     }
   }
 
