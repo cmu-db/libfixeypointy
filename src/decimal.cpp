@@ -4,6 +4,7 @@
 
 namespace libfixeypointy {
 
+// FIXME: now overflow check in Decimal creation, dangerous
 Decimal::Decimal(std::string input, ScaleType *scale) : value_(0) {
   if (input.empty()) {
     throw std::runtime_error("Invalid empty input string '" + input + "'");
@@ -226,7 +227,7 @@ std::string Decimal::ToString(uint32_t scale) const {
     output.append(integral_string);
 
     // Always include leading zero
-    if (output.empty() || output[0] == '-') output.push_back('0');
+    if (output.empty() || (output[0] == '-' && output.length() == 1)) output.push_back('0');
     output.push_back('.');
 
     std::reverse(fractional_string.begin(), fractional_string.end());
@@ -333,7 +334,7 @@ void Decimal::Multiply(const Decimal &multiplier, const ScaleType &scale) {
   MultiplyAndSet(multiplier.GetAbs(), scale);
   // Because we convert to positive above, if the sign changed, we overflowed.
   if (value_ < 0) {
-    throw("Result overflow > 128 bits");
+    throw std::runtime_error("Result overflow > 128 bits");
   }
   // Apply the sign we saved at the beginning
   value_ = negative_result ? 0 - value_ : value_;
@@ -368,7 +369,7 @@ void Decimal::MultiplyByConstant(const int64_t &value) {
   if (half_words_result[2] == 0 && half_words_result[3] == 0) {
     value_ = half_words_result[0] | (half_words_result[1] << 64);
   } else {
-    throw("Result overflow > 128 bits");
+    throw std::runtime_error("Result overflow > 128 bits");
   }
 
   // Apply the sign we saved at the beginning
@@ -437,7 +438,7 @@ void Decimal::Divide(const Decimal &denominator, const ScaleType &scale) {
 
   // Because we convert to positive above, if the sign changed, we overflowed.
   if (value_ < 0) {
-    throw("Result overflow > 128 bits");
+    throw std::runtime_error("Result overflow > 128 bits");
   }
 
   value_ = (negative_result ? 0 - value_ : value_);
@@ -469,7 +470,7 @@ Decimal::NativeType DecimalComputeMagicNumbers128(const uint128_t (&half_words_r
       return result_upper >> (magic_p - 1);
     }
     default:
-      throw "Unknown algorithm.";
+      throw std::runtime_error("Unknown algorithm.");
   }
 }
 
@@ -588,7 +589,7 @@ uint128_t Decimal::CalculateUnsignedLongDivision128(uint128_t u1, uint128_t u0, 
   // Hacker's Delight [2E Figure 9-3]
   if (u1 >= v) {
     // Result will overflow from 128 bits
-    throw("Decimal Overflow from 128 bits");
+    throw std::runtime_error("Decimal Overflow from 128 bits");
   }
 
   // Base 2^64
@@ -675,7 +676,7 @@ Decimal::NativeType Decimal::DivideByMagicNumbers256(const uint128_t (&a)[4], co
       uint128_t overflow_checker = result_upper >> magic_p;
       if (overflow_checker > 0) {
         // Result will overflow from 128 bits
-        throw("Result overflow > 128 bits");
+        throw std::runtime_error("Result overflow > 128 bits");
       }
 
       result_lower = result_lower >> magic_p;
@@ -703,7 +704,7 @@ Decimal::NativeType Decimal::DivideByMagicNumbers256(const uint128_t (&a)[4], co
       uint128_t overflow_checker = result_upper >> magic_p;
       if ((overflow_checker > 0) || (result_upper < add_upper)) {
         // Result will overflow from 128 bits
-        throw("Result overflow > 128 bits");
+        throw std::runtime_error("Result overflow > 128 bits");
       }
 
       // We know that we only retain the lower 128 bits so there is no need of shri
@@ -714,7 +715,7 @@ Decimal::NativeType Decimal::DivideByMagicNumbers256(const uint128_t (&a)[4], co
       break;
     }
     default: {
-      throw("Unsupported overflow algorithm type");
+      throw std::runtime_error("Unsupported overflow algorithm type");
     }
   }
   return (final_result);
