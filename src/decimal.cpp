@@ -290,7 +290,7 @@ void Decimal::Add(const Decimal &other) {
   value_ += other.value_;
 }
 
-void Decimal::Subtract(const Decimal &other) { 
+void Decimal::Subtract(const Decimal &other) {
   // TODO(Guide): Implementation with multiple branches maybe not performant, try reducing branches
   // If the first value is positive and the second value is negative,
   // it is possible to get overflowed
@@ -343,7 +343,7 @@ void Decimal::MultiplyByConstant(const int64_t &value) {
   // The method in Hacker Delight 2-14 is not used because shift needs to be agnostic of underlying T
   // Will be needed to change in the future when storage optimizations happen
   // Save the sign of the result since we want to multiply regardless of the sign
-  bool negative_result = (value_ < 0) != (multiplier.ToNative() < 0);
+  bool negative_result = (value_ < 0) != (value < 0);
   // Extract the absolute value of the first decimal
   value_ = (value_ < 0 ? 0 - value_ : value_);
 
