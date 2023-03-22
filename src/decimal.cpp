@@ -288,6 +288,7 @@ void Decimal::Add(const Decimal &other) {
   }
 
   // Otherwise, it is impossible to overflow
+  // TODO(Guide): Add first and check for the overflowing
   value_ += other.value_;
 }
 
@@ -320,6 +321,7 @@ void Decimal::Subtract(const Decimal &other) {
   }
 
   // Otherwise, it is impossible to overflow
+  // TODO(Guide): Add first and check for the overflowing
   value_ -= other.value_;
 }
 
