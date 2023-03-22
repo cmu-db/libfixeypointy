@@ -378,10 +378,15 @@ void Decimal::MultiplyByConstant(const int64_t &value) {
 void Decimal::DivideByConstant(const int64_t &value) {
   // The method in Hacker Delight 2-14 is not used because shift needs to be agnostic of underlying T
   // Will be needed to change in the future when storage optimizations happen
+  // Save the sign since we want to apply division regardless of the sign
   bool negative_result = (value_ < 0) != (value < 0);
+  // Take absolute value of the value_
   value_ = (value_ < 0 ? 0 - value_ : value_);
+  // Take absolute value of the constant (i.e., argument)
   uint128_t constant = value < 0 ? -value : value;
+  // Compute division
   UnsignedDivideConstant128Bit(constant);
+  // Apply the sign we saved at the beginning
   value_ = negative_result ? 0 - value_ : value_;
 }
 
@@ -395,22 +400,31 @@ void Decimal::Divide(const Decimal &denominator, const ScaleType &scale) {
 
   // The method in Hacker Delight 2-14 is not used because shift needs to be agnostic of underlying T
   // Will be needed to change in the future when storage optimizations happen
+  // Save the sign since we want to apply division regardless of the sign
   bool negative_result = (value_ < 0) != (denominator.ToNative() < 0);
+  // Take absolute value of the value_
   value_ = value_ < 0 ? 0 - value_ : value_;
-
+  // Take absolute value of the denominator
   NativeType constant = denominator < 0 ? -denominator.ToNative() : denominator.ToNative();
 
   // 1. Multiply with 10^(denominator scale), keeping result in numerator scale.
+  // E.g., 10.??? (10???) / 2.?? (2??), then numerator = 10??? * 10^2 = 10???00
   uint128_t half_words_result[4];
   {
+    // Split each decimal into 2 half words using BOTTOM_MASK and TOP_MASK
+    // E.g., 0b11001010 -> {0b1010, 0b1100}
     uint128_t half_words_a[2] = {value_ & BOTTOM_MASK, (value_ & TOP_MASK) >> 64};
     uint128_t half_words_b[2] = {POWER_OF_TEN[scale][1], POWER_OF_TEN[scale][0]};
+    // Compute multiplication
     CalculateMultiWordProduct128(half_words_a, half_words_b, half_words_result, 2, 2);
   }
 
+  // TODO(Guide): Does this predicate check correctly?
   if (half_words_result[2] == 0 && half_words_result[3] == 0) {
     // 2. If overflow, divide by the denominator with multi-word 256-bit division.
+    // E.g., 1 / 2.?, then 1 * 10^1 = 10 (log2(10) << 64)
     value_ = half_words_result[0] | (half_words_result[1] << 64);
+    // Apply divisions
     UnsignedDivideConstant128Bit(constant);
   } else if (MAGIC_CUSTOM_256BIT_CONSTANT_DIVISION.count(constant) > 0) {
     // 3. If no overflow, and have magic numbers, use magic numbers.
