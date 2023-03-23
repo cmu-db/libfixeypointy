@@ -446,6 +446,7 @@ void Decimal::Divide(const Decimal &denominator, const ScaleType &scale) {
   value_ = (negative_result ? 0 - value_ : value_);
 }
 
+// TODO(JK):
 /** Some code that was refactored out of Rohan's stuff. Here be dragons. */
 Decimal::NativeType DecimalComputeMagicNumbers128(const uint128_t (&half_words_result)[4], AlgorithmType algo,
                                                   uint32_t magic_p, uint128_t current_value) {
@@ -476,10 +477,13 @@ Decimal::NativeType DecimalComputeMagicNumbers128(const uint128_t (&half_words_r
   }
 }
 
+// TODO(Guide):
 Decimal Decimal::GetNegation() const { return Decimal(-value_); }
 
+// TODO(Guide):
 Decimal Decimal::GetAbs() const { return value_ < 0 ? Decimal(-value_) : Decimal(value_); }
 
+// TODO(Guide):
 void Decimal::MultiplyAndSet(const Decimal &unsigned_input, ScaleType scale) {
   // 1. Multiply with the overflow check.
   // 2. If overflow, divide by 10^scale using 256-bit magic number division.
@@ -511,6 +515,7 @@ void Decimal::MultiplyAndSet(const Decimal &unsigned_input, ScaleType scale) {
   value_ = DivideByMagicNumbers256(half_words_result, magic, algo, magic_p);
 }
 
+// TODO(Guide):
 void Decimal::DivideByConstantPowerOfTen128(uint32_t exponent) {
   // Magic number division from Hacker's Delight [2E 10-9 Unsigned Division].
 
@@ -531,6 +536,7 @@ void Decimal::DivideByConstantPowerOfTen128(uint32_t exponent) {
   value_ = DecimalComputeMagicNumbers128(half_words_result, algo, magic_p, value_);
 }
 
+// TODO(JK):
 void Decimal::UnsignedDivideConstant128Bit(uint128_t constant) {
   // 1. If the constant is a power of 2, we right shift.
   // 2. If the magic numbers were precomputed for the constant, we use those.
@@ -575,6 +581,7 @@ void Decimal::UnsignedDivideConstant128Bit(uint128_t constant) {
   }
 }
 
+// TODO(Guide):
 uint128_t Decimal::UnsignedMagicDivideConstantNumerator256Bit(const uint128_t (&unsigned_dividend)[4],
                                                               uint128_t unsigned_constant) {
   uint128_t magic[4] = {MAGIC_CUSTOM_256BIT_CONSTANT_DIVISION[unsigned_constant].chunk3_,
@@ -587,6 +594,7 @@ uint128_t Decimal::UnsignedMagicDivideConstantNumerator256Bit(const uint128_t (&
   return DivideByMagicNumbers256(unsigned_dividend, magic, algo, magic_p);
 }
 
+// TODO(Guide):
 uint128_t Decimal::CalculateUnsignedLongDivision128(uint128_t u1, uint128_t u0, uint128_t v) {
   // Hacker's Delight [2E Figure 9-3]
   if (u1 >= v) {
@@ -640,6 +648,7 @@ uint128_t Decimal::CalculateUnsignedLongDivision128(uint128_t u1, uint128_t u0, 
   return q1 * b + q0;
 }
 
+// TODO(Taoxi):
 void Decimal::CalculateMultiWordProduct128(const uint128_t *const half_words_a, const uint128_t *const half_words_b,
                                            uint128_t *half_words_result, uint32_t m, uint32_t n) const {
   // Hacker's Delight [2E Figure 8-1]
@@ -658,6 +667,7 @@ void Decimal::CalculateMultiWordProduct128(const uint128_t *const half_words_a, 
   }
 }
 
+// TODO(Taoxi):
 /** Some code that was refactored out of Rohan's stuff. Here be dragons. */
 Decimal::NativeType Decimal::DivideByMagicNumbers256(const uint128_t (&a)[4], const uint128_t (&b)[4],
                                                      AlgorithmType algo, uint32_t magic_p) {
