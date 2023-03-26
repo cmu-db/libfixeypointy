@@ -502,11 +502,13 @@ void Decimal::MultiplyAndSet(const Decimal &unsigned_input, ScaleType scale) {
 
   if (half_words_result[2] == 0 && half_words_result[3] == 0) {
     // TODO(Rohan): Optimize by sending in an array of half words
+    // If no overflow, use the product directly
     value_ = half_words_result[0] | (half_words_result[1] << 64);
     DivideByConstantPowerOfTen128(scale);
     return;
   }
 
+  // If overflow
   // Magic number half words
   uint128_t magic[4] = {MAGIC_ARRAY[scale][3], MAGIC_ARRAY[scale][2], MAGIC_ARRAY[scale][1], MAGIC_ARRAY[scale][0]};
   uint32_t magic_p = MAGIC_P_AND_ALGO_ARRAY[scale].first - 256;
