@@ -310,7 +310,11 @@ std::string Decimal::ToString(uint32_t scale) const {
 static uint32_t GetNumLeadingZeroesAssumingNonZero(uint128_t num) {
   uint64_t hi = num >> 64;
   uint64_t lo = num;
+  // __builtin_clzll is to count leading zero (based on 64-bit integers)
+  // For example, assume __builtin_clzll is for 8-bit integers
+  // __builtin_clzll(0b00000110) -> 5
   int32_t retval[2] = {__builtin_clzll(hi), __builtin_clzll(lo) + 64};
+  // If hi is zero, return leading zero count of lo 
   auto idx = static_cast<uint32_t>(hi == 0);
   return retval[idx];
 }
@@ -497,6 +501,7 @@ void Decimal::Divide(const Decimal &denominator, const ScaleType &scale) {
     throw std::runtime_error("Result overflow > 128 bits");
   }
 
+  // Apply the sign we saved at the beginning
   value_ = (negative_result ? 0 - value_ : value_);
 }
 
@@ -562,7 +567,7 @@ void Decimal::MultiplyAndSet(const Decimal &unsigned_input, ScaleType scale) {
     return;
   }
 
-  // If overflow, use magic numbers
+  // If overflow, divide by 256-bit magic numbers
   // Each magic[i] has 32 bits
   // Then, we choose a choice of algorithm based on scale
   uint128_t magic[4] = {MAGIC_ARRAY[scale][3], MAGIC_ARRAY[scale][2], MAGIC_ARRAY[scale][1], MAGIC_ARRAY[scale][0]};
@@ -587,6 +592,7 @@ void Decimal::DivideByConstantPowerOfTen128(uint32_t exponent) {
     CalculateMultiWordProduct128(half_words_a, half_words_b, half_words_result, 2, 2);
   }
 
+  // Then, use 128-bit magic number
   uint32_t magic_p = MAGIC_MAP128_BIT_POWER_TEN[exponent].p_ - 128;
   AlgorithmType algo = MAGIC_MAP128_BIT_POWER_TEN[exponent].algo_;
 
@@ -641,6 +647,7 @@ void Decimal::UnsignedDivideConstant128Bit(uint128_t constant) {
 // TODO(Guide):
 uint128_t Decimal::UnsignedMagicDivideConstantNumerator256Bit(const uint128_t (&unsigned_dividend)[4],
                                                               uint128_t unsigned_constant) {
+  // Apply 256-bit magic numbers
   uint128_t magic[4] = {MAGIC_CUSTOM_256BIT_CONSTANT_DIVISION[unsigned_constant].chunk3_,
                         MAGIC_CUSTOM_256BIT_CONSTANT_DIVISION[unsigned_constant].chunk2_,
                         MAGIC_CUSTOM_256BIT_CONSTANT_DIVISION[unsigned_constant].chunk1_,
@@ -659,10 +666,18 @@ uint128_t Decimal::CalculateUnsignedLongDivision128(uint128_t u1, uint128_t u0, 
     throw std::runtime_error("Decimal Overflow from 128 bits");
   }
 
-  // Base 2^64
+  // TODO(Guide): What if v is 0
+
+
+  // Base = 2^64
   uint128_t b = 1;
   b = b << 64;
 
+  // un1 and un0 are normalized dividend LSD's
+  // vn1 and vn0 are normalized divisor digits
+  // q1 and q0 are quotient digits
+  // un32, un21, un10 are dividend digit pairs
+  // rhat is a remainder
   uint128_t un1, un0, vn1, vn0, q1, q0, un32, un21, un10, rhat;
   int128_t s = GetNumLeadingZeroesAssumingNonZero(v);
 
