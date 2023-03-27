@@ -4,41 +4,41 @@
 
 namespace libfixeypointy {
 
-// FIXME: no overflow check in Decimal creation, dangerous
 Decimal::Decimal(std::string input, ScaleType *scale) : value_(0) {
   if (input.empty()) {
     throw std::runtime_error("Invalid empty input string '" + input + "'");
   }
 
   // TODO: There could be more efficient ways to detect overflow
+  // For example, fusing with the decimal creation logic
   // Overflow when there is more than 38 digits without leading and trailing zeroes
-  uint32_t pos = 0;
+  uint32_t overflow_pos = 0;
   uint32_t integral_digits = 0;
   uint32_t fractional_digits = 0;
 
   // Count integral digits
   bool is_leading_zero = true;
-  while (pos < input.size() && input[pos] != '.') {
-    if (is_leading_zero && input[pos] != '0') {
+  while (overflow_pos < input.size() && input[overflow_pos] != '.') {
+    if (is_leading_zero && input[overflow_pos] != '0') {
       is_leading_zero = false;
     }
     integral_digits += !is_leading_zero;
-    pos++;
+    overflow_pos++;
   }
 
   // Count fractional digits
-  // Increment pos to skip decimal point
-  pos++;
+  // Increment overflow_pos to skip decimal point
+  overflow_pos++;
 
   // Only if there is fractional part
-  if (pos < input.size()) {
+  if (overflow_pos < input.size()) {
     uint32_t current_digits = 1;
-    while (pos < input.size() && input[pos] != '.') {
-      if (input[pos] != '0') {
+    while (overflow_pos < input.size() && input[overflow_pos] != '.') {
+      if (input[overflow_pos] != '0') {
         fractional_digits = current_digits;
       }
       current_digits++;
-      pos++;
+      overflow_pos++;
     }
   }
 
@@ -49,7 +49,7 @@ Decimal::Decimal(std::string input, ScaleType *scale) : value_(0) {
 
   // We are going to parse the input string to extract the decimal
   // We use this to keep track of the position in the string.
-  pos = 0;
+  uint32_t pos = 0;
 
   // If the first character is a minus sign, then we obviously have
   // a negative number.
@@ -138,14 +138,24 @@ Decimal::Decimal(const std::string &input, const ScaleType &scale) : value_(0) {
     pos++;
   }
 
+  // If scale is zero, we need to round a fractional part
   if (scale == 0) {
+    // Divide by 10 (since we've assumed that there is at least 1 fractional digit)
+    // From 123450 -> 12345
     value_ /= 10;
+    // If there is a fractional part
     if (pos != input.size()) {
-      if (pos + 1 < input.size()) {
+      // Ensure that the fractional part is not just decimal point
+      if (pos < input.size() - 1) {
+        // Skip decimal point
         pos++;
+        // Round by the first fractional digit
+        // Using round to odd
         if (input[pos] - '0' > 5) {
+          // More than five
           value_ += 1;
         } else if (input[pos] - '0' == 5 && value_ % 2 == 1) {
+          // If it is 5 and the integral part is odd
           value_ += 1;
         }
       }
@@ -161,6 +171,7 @@ Decimal::Decimal(const std::string &input, const ScaleType &scale) : value_(0) {
     for (ScaleType i = 0; i < scale - 1; i++) {
       value_ *= 10;
     }
+    // TODO(Guide): Can be overflowed, fixed this
     if (is_negative) {
       value_ = -value_;
     }
@@ -175,6 +186,7 @@ Decimal::Decimal(const std::string &input, const ScaleType &scale) : value_(0) {
     for (ScaleType i = 0; i < scale - 1; i++) {
       value_ *= 10;
     }
+    // TODO(Guide): Can be overflowed, fixed this
     if (is_negative) {
       value_ = -value_;
     }
@@ -183,13 +195,16 @@ Decimal::Decimal(const std::string &input, const ScaleType &scale) : value_(0) {
 
   for (ScaleType i = 1; i < scale; i++) {
     if (pos < input.size()) {
+      // After decimal point
       value_ += input[pos] - '0';
       value_ *= 10;
       pos++;
     } else {
+      // If scale > digits in the decimal, pad zeroes
       for (ScaleType j = i; j < scale; j++) {
         value_ *= 10;
       }
+      // TODO(Guide): Can be overflowed, fixed this
       if (is_negative) {
         value_ = -value_;
       }
@@ -197,6 +212,7 @@ Decimal::Decimal(const std::string &input, const ScaleType &scale) : value_(0) {
     }
   }
 
+  // If scale and digits are the same, return
   if (pos == input.size()) {
     if (is_negative) {
       value_ = -value_;
@@ -204,6 +220,8 @@ Decimal::Decimal(const std::string &input, const ScaleType &scale) : value_(0) {
     return;
   }
 
+  // If not, round to even
+  // FIXME: Why == instead of <=
   if (pos == input.size() - 1) {
     // No Rounding required
     value_ += input[pos] - '0';
@@ -215,11 +233,10 @@ Decimal::Decimal(const std::string &input, const ScaleType &scale) : value_(0) {
       // No Rounding will happen
       value_ += input[pos] - '0';
     } else {
+      // Round to odd
       if ((input[pos] - '0') % 2 == 0) {
-        // Round up if ODD
         value_ += input[pos] - '0';
       } else {
-        // Round up if ODD
         value_ += input[pos] - '0' + 1;
       }
     }
