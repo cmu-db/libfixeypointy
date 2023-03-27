@@ -231,7 +231,7 @@ class Decimal {
     return new_scale;
   }
 
- private:
+//  private:
   // The encoded decimal value
   NativeType value_;
 

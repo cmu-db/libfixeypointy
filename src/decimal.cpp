@@ -658,7 +658,7 @@ uint128_t Decimal::UnsignedMagicDivideConstantNumerator256Bit(const uint128_t (&
   return DivideByMagicNumbers256(unsigned_dividend, magic, algo, magic_p);
 }
 
-// TODO(Guide):
+// TODO(Guide): Do we need un0, vn0?
 uint128_t Decimal::CalculateUnsignedLongDivision128(uint128_t u1, uint128_t u0, uint128_t v) {
   // Hacker's Delight [2E Figure 9-3]
   if (u1 >= v) {
@@ -673,7 +673,7 @@ uint128_t Decimal::CalculateUnsignedLongDivision128(uint128_t u1, uint128_t u0, 
   uint128_t b = 1;
   b = b << 64;
 
-  // un1 and un0 are normalized dividend LSD's
+  // un1 and un0 are normalized (by scale) dividend LSD's
   // vn1 and vn0 are normalized divisor digits
   // q1 and q0 are quotient digits
   // un32, un21, un10 are dividend digit pairs
@@ -682,32 +682,65 @@ uint128_t Decimal::CalculateUnsignedLongDivision128(uint128_t u1, uint128_t u0, 
   int128_t s = GetNumLeadingZeroesAssumingNonZero(v);
 
   // Normalize everything
+  // Make sure that v does not contain leading zeroes
   v = v << s;
+  // vn1 is the higher 64 bits of normalized-by-scale v
   vn1 = v >> 64;
+  // vn0 is the lower 64 bits of normalized-by-scale v
   vn0 = v & 0xFFFFFFFFFFFFFFFF;
 
+  // un = {un3, un2, un1, un0} (128-bit each)
+  // u1 (64-bit) << 10
+  // u0 (64-bit) >> (128 - 10)
+  // E.g., assume 8-bit case and s = 2
+  // {0b00010111, 0b10101011} 
+  // u1 << 2 is 0b01011100
+  // u0 << 6 is 0b00000010
+  // u1 << 2 | u0 >> 6 is 0b01011110 (Pick 128-bit top most bit after normalized)
+  // ~s - 1 >> 127 is a write mask when the MSB of s is 1
+  // E.g., ~0b01011010 - 0b1 >> 7 = 0b10100101 - 0b1 >> 7 = 0b10100100 >> 7 = 0b11111111
+  // If not 1, un32 is zero
   un32 = (u1 << s) | ((u0 >> (128 - s)) & ((-s) >> 127));
+  // un10 is the remaining bit of u0 after normalized
   un10 = u0 << s;
+  // un1 gets only the higher 64-bit of u10
   un1 = un10 >> 64;
+  // un0 gets only the lower 64-bit of un10
   un0 = un10 & 0xFFFFFFFFFFFFFFFF;
 
+  // q1, rhat is a top 128-bit quotient and its remainder
+  // TODO(Guide): What if vn = 0?
   q1 = un32 / vn1;
-  rhat = un32 - q1 * vn1;
+  rhat = un32 - (q1 * vn1);
+  printf("q1=%llx rhat=%llx\n", (unsigned long long)q1, (unsigned long long)rhat);
 
+  // Long division for the higher bits
   do {
+    // If still can divide since q1 >= b
+    // 
     if ((q1 >= b) || (q1 * vn0 > b * rhat + un1)) {
       q1 = q1 - 1;
       rhat = rhat + vn1;
+      printf("q1=%llx rhat=%llx\n", (unsigned long long)q1, (unsigned long long)rhat);
     } else {
       break;
     }
   } while (rhat < b);
+
+  printf("q1=%llx rhat=%llx\n", (unsigned long long)q1, (unsigned long long)rhat);
 
   un21 = un32 * b + un1 - q1 * v;
 
   q0 = un21 / vn1;
   rhat = un21 - q0 * vn1;
 
+  printf("un=0x%llx%llx%llx%llx\n", (unsigned long long)(un1 >> 64), (unsigned long long)un1,
+    (unsigned long long)(un0 >> 64), (unsigned long long)un0);
+  printf("un32=0x%llx%llx un21=0x%llx%llx un10=0x%llx%llx\n", (unsigned long long)(un32 >> 64), (unsigned long long)un32,
+    (unsigned long long)(un21 >> 64), (unsigned long long)un21,
+    (unsigned long long)(un10 >> 64), (unsigned long long)un10);
+
+  // Long division for the lower bit
   do {
     if ((q0 >= b) || (q0 * vn0 > b * rhat + un0)) {
       q0 = q0 - 1;
@@ -717,6 +750,7 @@ uint128_t Decimal::CalculateUnsignedLongDivision128(uint128_t u1, uint128_t u0, 
     }
   } while (rhat < b);
 
+  // Merge hi and lo quotients using base
   return q1 * b + q0;
 }
 
