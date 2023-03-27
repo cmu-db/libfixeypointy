@@ -4,15 +4,52 @@
 
 namespace libfixeypointy {
 
-// FIXME: now overflow check in Decimal creation, dangerous
+// FIXME: no overflow check in Decimal creation, dangerous
 Decimal::Decimal(std::string input, ScaleType *scale) : value_(0) {
   if (input.empty()) {
     throw std::runtime_error("Invalid empty input string '" + input + "'");
   }
 
+  // TODO: There could be more efficient ways to detect overflow
+  // Overflow when there is more than 38 digits without leading and trailing zeroes
+  uint32_t pos = 0;
+  uint32_t integral_digits = 0;
+  uint32_t fractional_digits = 0;
+
+  // Count integral digits
+  bool is_leading_zero = true;
+  while (pos < input.size() && input[pos] != '.') {
+    if (is_leading_zero && input[pos] != '0') {
+      is_leading_zero = false;
+    }
+    integral_digits += !is_leading_zero;
+    pos++;
+  }
+
+  // Count fractional digits
+  // Increment pos to skip decimal point
+  pos++;
+
+  // Only if there is fractional part
+  if (pos < input.size()) {
+    uint32_t current_digits = 1;
+    while (pos < input.size() && input[pos] != '.') {
+      if (input[pos] != '0') {
+        fractional_digits = current_digits;
+      }
+      current_digits++;
+      pos++;
+    }
+  }
+
+  // Check overflow
+  if (integral_digits + fractional_digits > 38) {
+    throw std::runtime_error("Overflow > 38 digits");
+  }
+
   // We are going to parse the input string to extract the decimal
   // We use this to keep track of the position in the string.
-  uint32_t pos = 0;
+  pos = 0;
 
   // If the first character is a minus sign, then we obviously have
   // a negative number.
@@ -508,8 +545,9 @@ void Decimal::MultiplyAndSet(const Decimal &unsigned_input, ScaleType scale) {
     return;
   }
 
-  // If overflow
-  // Magic number half words
+  // If overflow, use magic numbers
+  // Each magic[i] has 32 bits
+  // Then, we choose a choice of algorithm based on scale
   uint128_t magic[4] = {MAGIC_ARRAY[scale][3], MAGIC_ARRAY[scale][2], MAGIC_ARRAY[scale][1], MAGIC_ARRAY[scale][0]};
   uint32_t magic_p = MAGIC_P_AND_ALGO_ARRAY[scale].first - 256;
   AlgorithmType algo = MAGIC_P_AND_ALGO_ARRAY[scale].second;
