@@ -1,6 +1,14 @@
+# IDE
 .idea
+.vscode
+
+# Build
 cmake-build-debug
 venv
+build
+
+# External Verifications
+java-verify
 
 # Prerequisites
 *.d

@@ -54,7 +54,7 @@ add_subdirectory(
 ################################################################################
 
 # Compiler flags.
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -Wall -Wextra -Werror -march=native")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fPIC -Wall -Wextra -Werror -march=native")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls")
 
 set(BUSTUB_SRC_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src)
@@ -98,3 +98,13 @@ add_library(libfixeypointy SHARED src/decimal.cpp src/magic_numbers.h src/custom
 # Demo Program
 add_executable(demo src/demo.cpp)
 target_link_libraries(demo libfixeypointy)
+
+# Libfixeypointy Benchmarks
+add_executable(bench-lib src/bench.cpp)
+target_link_libraries(bench-lib libfixeypointy)
+
+# GMP Benchmarks
+add_executable(bench-gmp src/bench_gmp.cpp)
+target_include_directories(bench-gmp PUBLIC /usr/local/include)
+target_link_directories(bench-gmp PUBLIC /usr/local/lib)
+target_link_libraries(bench-gmp PUBLIC gmp gmpxx)
