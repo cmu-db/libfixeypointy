@@ -648,10 +648,15 @@ uint128_t Decimal::CalculateUnsignedLongDivision128(uint128_t u1, uint128_t u0, 
   return q1 * b + q0;
 }
 
-// TODO(Taoxi):
 void Decimal::CalculateMultiWordProduct128(const uint128_t *const half_words_a, const uint128_t *const half_words_b,
                                            uint128_t *half_words_result, uint32_t m, uint32_t n) const {
   // Hacker's Delight [2E Figure 8-1]
+  // Calculate product of two unsigned intergers of arbitrary size by applying grade-school style multiplication with
+  // 64-bit chuncks. Use uint128_t to store 64 raw bits in lower half to prevent 64-bit multiplication overflow.
+  // Input must be break into half words of 128 bit chunks (64 bits), each stored in array of uint128_t, with upper half
+  // word (64 bits) zeroed out.
+  // Then we apply grade-school style multiplication to each 64-bit chunk (stored in uint128_t):
+  // Suppose A,B,C,D are raw 64 bits, AB * CD = B*D + B*C << 64 + A*D << 64 + A*C << 128
   uint128_t k, t;
   uint32_t i, j;
   constexpr const uint128_t bottom_mask = (uint128_t{1} << 64) - 1;
@@ -667,11 +672,12 @@ void Decimal::CalculateMultiWordProduct128(const uint128_t *const half_words_a, 
   }
 }
 
-// TODO(Taoxi):
 /** Some code that was refactored out of Rohan's stuff. Here be dragons. */
 Decimal::NativeType Decimal::DivideByMagicNumbers256(const uint128_t (&a)[4], const uint128_t (&b)[4],
                                                      AlgorithmType algo, uint32_t magic_p) {
   // Hacker's Delight [2E Chapter 10 Integer Division by Constants]
+  // Divide by constant is equivalent of multiplication by near-reciprocal of divisor d and shifting right.
+  // For example, for 32 bit integers, b / d = (b * magic) >> 32, where magic is some integer around 2^32 / d.
   uint128_t half_words_magic_result[8];
   NativeType final_result;
 
