@@ -437,6 +437,11 @@ void Decimal::MultiplyByConstant(const int64_t &value) {
 }
 
 void Decimal::DivideByConstant(const int64_t &value) {
+  // If value is 0
+  if (value == 0) {
+    throw std::runtime_error("Divided by 0");
+  }
+
   // The method in Hacker Delight 2-14 is not used because shift needs to be agnostic of underlying T
   // Will be needed to change in the future when storage optimizations happen
   // Save the sign since we want to apply division regardless of the sign
@@ -458,6 +463,11 @@ void Decimal::Divide(const Decimal &denominator, const ScaleType &scale) {
   // Moreover, the result is in the numerator's scale for technical reasons.
   // If the result were to be in the denominator's scale, the first step would need to be multiplication with
   // 10^(2*denominator scale - numerator scale) which requires 256-bit multiply and 512-bit overflow check.
+
+  // If value is 0
+  if (denominator.ToNative() == 0) {
+    throw std::runtime_error("Divided by 0");
+  }
 
   // The method in Hacker Delight 2-14 is not used because shift needs to be agnostic of underlying T
   // Will be needed to change in the future when storage optimizations happen
@@ -658,7 +668,7 @@ uint128_t Decimal::UnsignedMagicDivideConstantNumerator256Bit(const uint128_t (&
   return DivideByMagicNumbers256(unsigned_dividend, magic, algo, magic_p);
 }
 
-// TODO(Guide): Do we need un0, vn0?
+// TODO(Guide):
 uint128_t Decimal::CalculateUnsignedLongDivision128(uint128_t u1, uint128_t u0, uint128_t v) {
   // Hacker's Delight [2E Figure 9-3]
   if (u1 >= v) {
@@ -667,7 +677,9 @@ uint128_t Decimal::CalculateUnsignedLongDivision128(uint128_t u1, uint128_t u0, 
   }
 
   // TODO(Guide): What if v is 0
-
+  if (v == 0) {
+    throw std::runtime_error("Divided by 0");
+  }
 
   // Base = 2^64
   uint128_t b = 1;
@@ -708,37 +720,35 @@ uint128_t Decimal::CalculateUnsignedLongDivision128(uint128_t u1, uint128_t u0, 
   // un0 gets only the lower 64-bit of un10
   un0 = un10 & 0xFFFFFFFFFFFFFFFF;
 
-  // q1, rhat is a top 128-bit quotient and its remainder
   // TODO(Guide): What if vn = 0?
+  if (vn1 == 0) {
+    throw std::runtime_error("Divided by 0");
+  }
+
+  // q1, rhat is a top 128-bit quotient and its remainder
+  // q1 = un32 / vn1
   q1 = un32 / vn1;
+  // rhat = un32 % vn1
   rhat = un32 - (q1 * vn1);
-  printf("q1=%llx rhat=%llx\n", (unsigned long long)q1, (unsigned long long)rhat);
 
   // Long division for the higher bits
   do {
-    // If still can divide since q1 >= b
-    // 
-    if ((q1 >= b) || (q1 * vn0 > b * rhat + un1)) {
+    // If still can divide since q1 >= b or
+    // the lower bit part is sufficient to continue the division 
+    if ((q1 >= b) || ((q1 * vn0) > (b * rhat) + un1)) {
       q1 = q1 - 1;
       rhat = rhat + vn1;
-      printf("q1=%llx rhat=%llx\n", (unsigned long long)q1, (unsigned long long)rhat);
     } else {
       break;
     }
   } while (rhat < b);
 
-  printf("q1=%llx rhat=%llx\n", (unsigned long long)q1, (unsigned long long)rhat);
-
-  un21 = un32 * b + un1 - q1 * v;
-
+  // un21 = un321 - (q1 * v)
+  un21 = (un32 * b) + un1 - (q1 * v);
+  // q0 = un21 / vn1
   q0 = un21 / vn1;
+  // rhat = un21 % vn1
   rhat = un21 - q0 * vn1;
-
-  printf("un=0x%llx%llx%llx%llx\n", (unsigned long long)(un1 >> 64), (unsigned long long)un1,
-    (unsigned long long)(un0 >> 64), (unsigned long long)un0);
-  printf("un32=0x%llx%llx un21=0x%llx%llx un10=0x%llx%llx\n", (unsigned long long)(un32 >> 64), (unsigned long long)un32,
-    (unsigned long long)(un21 >> 64), (unsigned long long)un21,
-    (unsigned long long)(un10 >> 64), (unsigned long long)un10);
 
   // Long division for the lower bit
   do {
