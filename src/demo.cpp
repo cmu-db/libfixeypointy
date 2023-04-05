@@ -2,6 +2,7 @@
 #include <iostream>
 #include <string>
 #include <utility>
+#include <chrono>
 
 #include "decimal.h"
 
@@ -9,6 +10,7 @@
 #define UNUSED_ATTRIBUTE __attribute__((unused))
 
 using namespace libfixeypointy;
+using namespace std::chrono;
 
 struct DemoDecimal {
   Decimal *decimal = nullptr;
@@ -52,36 +54,96 @@ DemoDecimal parse_decimal(std::stringstream &input) {
  * @param scale
  * @return
  */
-Decimal compute_result(DemoDecimal &decimal1, DemoDecimal &decimal2, const std::string &op, const uint32_t scale) {
+void compute_result(DemoDecimal &decimal1, DemoDecimal &decimal2, const std::string &op, const uint32_t scale) {
   Decimal result(*decimal1.decimal);
+
+  double duration = 0.0;
+
+  // if (op == "+") {
+  //   result += *decimal2.decimal;
+  // }
+  // // Subtraction
+  // else if (op == "-") {
+  //   result -= *decimal2.decimal;
+  // }
+  // // Multiplication
+  // else if (op == "*") {
+  //   result.Multiply(*decimal2.decimal, scale);
+  // }
+  // // Division
+  // else if (op == "/") {
+  //   result.Divide(*decimal2.decimal, scale);
+  // }
+
+  // if (op == "+") {
+  //   result += *decimal2.decimal;
+  // }
+  // // Subtraction
+  // else if (op == "-") {
+  //   result -= *decimal2.decimal;
+  // }
+  // // Multiplication
+  // else if (op == "*") {
+  //   result.Multiply(*decimal2.decimal, scale);
+  // }
+  // // Division
+  // else if (op == "/") {
+  //   result.Divide(*decimal2.decimal, scale);
+  // }
 
   // Addition
   if (op == "+") {
+    auto start = high_resolution_clock::now();
     result += *decimal2.decimal;
+    auto end = high_resolution_clock::now();
+
+    auto gap = duration_cast<nanoseconds>(end - start);
+    duration = gap.count();
   }
   // Subtraction
   else if (op == "-") {
+    auto start = high_resolution_clock::now();
     result -= *decimal2.decimal;
+    auto end = high_resolution_clock::now();
+
+    auto gap = duration_cast<nanoseconds>(end - start);
+    duration = gap.count();
   }
   // Multiplication
   else if (op == "*") {
+    auto start = high_resolution_clock::now();
     result.Multiply(*decimal2.decimal, scale);
+    auto end = high_resolution_clock::now();
+
+    auto gap = duration_cast<nanoseconds>(end - start);
+    duration = gap.count();
   }
   // Division
   else if (op == "/") {
+    auto start = high_resolution_clock::now();
     result.Divide(*decimal2.decimal, scale);
+    auto end = high_resolution_clock::now();
+
+    auto gap = duration_cast<nanoseconds>(end - start);
+    duration = gap.count();
   }
   // Unexpected!
   else {
     throw std::invalid_argument("Invalid operation '" + op + "'");
   }
 
-  return result;
+  std::cout << ">>> " << decimal1.decimal->ToString(scale) << " " << op << " " << decimal2.decimal->ToString(scale)
+            << " = " << result.ToString(scale) << " ";
+  std::cout << duration;
+  // if (has_equals) {
+  //   //      [EXPECTED:" << expected.orig_value << "]" << std::endl;
+  // }
+  std::cout << std::endl;
 }
 
 int main(UNUSED_ATTRIBUTE int argc, UNUSED_ATTRIBUTE char *argv[]) {
   std::string equals;
-  bool has_equals = false;
+  // bool has_equals = false;
   DemoDecimal expected;
 
   for (std::string line; std::getline(std::cin, line);) {
@@ -107,7 +169,7 @@ int main(UNUSED_ATTRIBUTE int argc, UNUSED_ATTRIBUTE char *argv[]) {
 
     // Equals
 
-    has_equals = false;
+    // has_equals = false;
     input >> equals;
     if (!equals.empty()) {
       if (equals != "=") {
@@ -115,21 +177,13 @@ int main(UNUSED_ATTRIBUTE int argc, UNUSED_ATTRIBUTE char *argv[]) {
       }
       // Expected Result Decimal
       expected = parse_decimal(input);
-      has_equals = true;
+      // has_equals = true;
     }
 
     // Execute!
     uint32_t new_scale = Decimal::MatchScales(val1.decimal, val2.decimal, val1.orig_scale, val2.orig_scale);
-    auto result = compute_result(val1, val2, op, new_scale);
-    //    std::cout << "Decimal1: " <<  << " [ORIG:" << val1.orig_value << "]" << std::endl;
-    //    std::cout << "Decimal2: " << val2.decimal.ToString(val2.orig_scale) << " [ORIG:" << val2.orig_value << "]" <<
-    //    std::endl;
-    std::cout << ">>> " << val1.decimal->ToString(new_scale) << " " << op << " " << val2.decimal->ToString(new_scale)
-              << " = " << result.ToString(new_scale) << " ";
-    if (has_equals) {
-      //      [EXPECTED:" << expected.orig_value << "]" << std::endl;
-    }
-    std::cout << std::endl;
+
+    compute_result(val1, val2, op, new_scale);
 
     //    break;
   }
