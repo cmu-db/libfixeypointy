@@ -10,7 +10,6 @@ Our project is to study how fast fixed-point data types are after applying bit-w
 More importantly, our project also explores possibilities to make fixed-point data types even faster than floating-point data types.
 
 Since there is an existing open-source project, `libfixeypointy`, we would like to utilize, validate, evaluate, and document the project code.
-GMP is used to evaluate the performance of the project.
 Accordingly, our project integrates the project with PostgreSQL, a well-known relational database management systems, as a user-defined type.
 Our project evaluates the user-defined type to understand the performance after integration against PostgreSQL's built-in `DECIMAL`, which is their fixed-point data type. Furthermore, our project evaluates the user-defined type against PostgreSQL's built-in `REAL`, which is their floating-point data type, to understand a performance gap between fixed-point with bit-wise techniques and floating-point data types in databases.
 
@@ -108,5 +107,5 @@ PostgreSQL supports UDTs, which allow users to define and benchmark new types. A
 ## Future Work
 
 The following list are the potential future work we think there are interesting to be explored.
-- Improve `libfixeypointey` performance based on existing techniques in existing high-performance packages
+- Improve `libfixeypointy` performance based on existing techniques in existing high-performance packages
 - Vectorization support
