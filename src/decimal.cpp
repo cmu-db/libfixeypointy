@@ -4,10 +4,47 @@
 
 namespace libfixeypointy {
 
-// FIXME: now overflow check in Decimal creation, dangerous
 Decimal::Decimal(std::string input, ScaleType *scale) : value_(0) {
   if (input.empty()) {
     throw std::runtime_error("Invalid empty input string '" + input + "'");
+  }
+
+  // TODO: There could be more efficient ways to detect overflow
+  // For example, fusing with the decimal creation logic
+  // Overflow when there is more than 38 digits without leading and trailing zeroes
+  uint32_t overflow_pos = 0;
+  uint32_t integral_digits = 0;
+  uint32_t fractional_digits = 0;
+
+  // Count integral digits
+  bool is_leading_zero = true;
+  while (overflow_pos < input.size() && input[overflow_pos] != '.') {
+    if (is_leading_zero && input[overflow_pos] != '0') {
+      is_leading_zero = false;
+    }
+    integral_digits += !is_leading_zero;
+    overflow_pos++;
+  }
+
+  // Count fractional digits
+  // Increment overflow_pos to skip decimal point
+  overflow_pos++;
+
+  // Only if there is fractional part
+  if (overflow_pos < input.size()) {
+    uint32_t current_digits = 1;
+    while (overflow_pos < input.size() && input[overflow_pos] != '.') {
+      if (input[overflow_pos] != '0') {
+        fractional_digits = current_digits;
+      }
+      current_digits++;
+      overflow_pos++;
+    }
+  }
+
+  // Check overflow
+  if (integral_digits + fractional_digits > 38) {
+    throw std::runtime_error("Overflow > 38 digits");
   }
 
   // We are going to parse the input string to extract the decimal
@@ -101,14 +138,24 @@ Decimal::Decimal(const std::string &input, const ScaleType &scale) : value_(0) {
     pos++;
   }
 
+  // If scale is zero, we need to round a fractional part
   if (scale == 0) {
+    // Divide by 10 (since we've assumed that there is at least 1 fractional digit)
+    // From 123450 -> 12345
     value_ /= 10;
+    // If there is a fractional part
     if (pos != input.size()) {
-      if (pos + 1 < input.size()) {
+      // Ensure that the fractional part is not just decimal point
+      if (pos < input.size() - 1) {
+        // Skip decimal point
         pos++;
+        // Round by the first fractional digit
+        // Using round to odd
         if (input[pos] - '0' > 5) {
+          // More than five
           value_ += 1;
         } else if (input[pos] - '0' == 5 && value_ % 2 == 1) {
+          // If it is 5 and the integral part is odd
           value_ += 1;
         }
       }
@@ -124,6 +171,7 @@ Decimal::Decimal(const std::string &input, const ScaleType &scale) : value_(0) {
     for (ScaleType i = 0; i < scale - 1; i++) {
       value_ *= 10;
     }
+    // TODO(Guide): Can be overflowed, fixed this
     if (is_negative) {
       value_ = -value_;
     }
@@ -138,6 +186,7 @@ Decimal::Decimal(const std::string &input, const ScaleType &scale) : value_(0) {
     for (ScaleType i = 0; i < scale - 1; i++) {
       value_ *= 10;
     }
+    // TODO(Guide): Can be overflowed, fixed this
     if (is_negative) {
       value_ = -value_;
     }
@@ -146,13 +195,16 @@ Decimal::Decimal(const std::string &input, const ScaleType &scale) : value_(0) {
 
   for (ScaleType i = 1; i < scale; i++) {
     if (pos < input.size()) {
+      // After decimal point
       value_ += input[pos] - '0';
       value_ *= 10;
       pos++;
     } else {
+      // If scale > digits in the decimal, pad zeroes
       for (ScaleType j = i; j < scale; j++) {
         value_ *= 10;
       }
+      // TODO(Guide): Can be overflowed, fixed this
       if (is_negative) {
         value_ = -value_;
       }
@@ -160,6 +212,7 @@ Decimal::Decimal(const std::string &input, const ScaleType &scale) : value_(0) {
     }
   }
 
+  // If scale and digits are the same, return
   if (pos == input.size()) {
     if (is_negative) {
       value_ = -value_;
@@ -167,6 +220,8 @@ Decimal::Decimal(const std::string &input, const ScaleType &scale) : value_(0) {
     return;
   }
 
+  // If not, round to even
+  // FIXME: Why == instead of <=
   if (pos == input.size() - 1) {
     // No Rounding required
     value_ += input[pos] - '0';
@@ -178,11 +233,10 @@ Decimal::Decimal(const std::string &input, const ScaleType &scale) : value_(0) {
       // No Rounding will happen
       value_ += input[pos] - '0';
     } else {
+      // Round to odd
       if ((input[pos] - '0') % 2 == 0) {
-        // Round up if ODD
         value_ += input[pos] - '0';
       } else {
-        // Round up if ODD
         value_ += input[pos] - '0' + 1;
       }
     }
@@ -256,7 +310,11 @@ std::string Decimal::ToString(uint32_t scale) const {
 static uint32_t GetNumLeadingZeroesAssumingNonZero(uint128_t num) {
   uint64_t hi = num >> 64;
   uint64_t lo = num;
+  // __builtin_clzll is to count leading zero (based on 64-bit integers)
+  // For example, assume __builtin_clzll is for 8-bit integers
+  // __builtin_clzll(0b00000110) -> 5
   int32_t retval[2] = {__builtin_clzll(hi), __builtin_clzll(lo) + 64};
+  // If hi is zero, return leading zero count of lo 
   auto idx = static_cast<uint32_t>(hi == 0);
   return retval[idx];
 }
@@ -379,6 +437,11 @@ void Decimal::MultiplyByConstant(const int64_t &value) {
 }
 
 void Decimal::DivideByConstant(const int64_t &value) {
+  // If value is 0
+  if (value == 0) {
+    throw std::runtime_error("Divided by 0");
+  }
+
   // The method in Hacker Delight 2-14 is not used because shift needs to be agnostic of underlying T
   // Will be needed to change in the future when storage optimizations happen
   // Save the sign since we want to apply division regardless of the sign
@@ -400,6 +463,11 @@ void Decimal::Divide(const Decimal &denominator, const ScaleType &scale) {
   // Moreover, the result is in the numerator's scale for technical reasons.
   // If the result were to be in the denominator's scale, the first step would need to be multiplication with
   // 10^(2*denominator scale - numerator scale) which requires 256-bit multiply and 512-bit overflow check.
+
+  // If value is 0
+  if (denominator.ToNative() == 0) {
+    throw std::runtime_error("Divided by 0");
+  }
 
   // The method in Hacker Delight 2-14 is not used because shift needs to be agnostic of underlying T
   // Will be needed to change in the future when storage optimizations happen
@@ -443,6 +511,7 @@ void Decimal::Divide(const Decimal &denominator, const ScaleType &scale) {
     throw std::runtime_error("Result overflow > 128 bits");
   }
 
+  // Apply the sign we saved at the beginning
   value_ = (negative_result ? 0 - value_ : value_);
 }
 
@@ -502,12 +571,15 @@ void Decimal::MultiplyAndSet(const Decimal &unsigned_input, ScaleType scale) {
 
   if (half_words_result[2] == 0 && half_words_result[3] == 0) {
     // TODO(Rohan): Optimize by sending in an array of half words
+    // If no overflow, use the product directly
     value_ = half_words_result[0] | (half_words_result[1] << 64);
     DivideByConstantPowerOfTen128(scale);
     return;
   }
 
-  // Magic number half words
+  // If overflow, divide by 256-bit magic numbers
+  // Each magic[i] has 32 bits
+  // Then, we choose a choice of algorithm based on scale
   uint128_t magic[4] = {MAGIC_ARRAY[scale][3], MAGIC_ARRAY[scale][2], MAGIC_ARRAY[scale][1], MAGIC_ARRAY[scale][0]};
   uint32_t magic_p = MAGIC_P_AND_ALGO_ARRAY[scale].first - 256;
   AlgorithmType algo = MAGIC_P_AND_ALGO_ARRAY[scale].second;
@@ -530,6 +602,7 @@ void Decimal::DivideByConstantPowerOfTen128(uint32_t exponent) {
     CalculateMultiWordProduct128(half_words_a, half_words_b, half_words_result, 2, 2);
   }
 
+  // Then, use 128-bit magic number
   uint32_t magic_p = MAGIC_MAP128_BIT_POWER_TEN[exponent].p_ - 128;
   AlgorithmType algo = MAGIC_MAP128_BIT_POWER_TEN[exponent].algo_;
 
@@ -584,6 +657,7 @@ void Decimal::UnsignedDivideConstant128Bit(uint128_t constant) {
 // TODO(Guide):
 uint128_t Decimal::UnsignedMagicDivideConstantNumerator256Bit(const uint128_t (&unsigned_dividend)[4],
                                                               uint128_t unsigned_constant) {
+  // Apply 256-bit magic numbers
   uint128_t magic[4] = {MAGIC_CUSTOM_256BIT_CONSTANT_DIVISION[unsigned_constant].chunk3_,
                         MAGIC_CUSTOM_256BIT_CONSTANT_DIVISION[unsigned_constant].chunk2_,
                         MAGIC_CUSTOM_256BIT_CONSTANT_DIVISION[unsigned_constant].chunk1_,
@@ -602,28 +676,66 @@ uint128_t Decimal::CalculateUnsignedLongDivision128(uint128_t u1, uint128_t u0, 
     throw std::runtime_error("Decimal Overflow from 128 bits");
   }
 
-  // Base 2^64
+  // TODO(Guide): What if v is 0
+  if (v == 0) {
+    throw std::runtime_error("Divided by 0");
+  }
+
+  // Base = 2^64
   uint128_t b = 1;
   b = b << 64;
 
+  // un1 and un0 are normalized (by scale) dividend LSD's
+  // vn1 and vn0 are normalized divisor digits
+  // q1 and q0 are quotient digits
+  // un32, un21, un10 are dividend digit pairs
+  // rhat is a remainder
   uint128_t un1, un0, vn1, vn0, q1, q0, un32, un21, un10, rhat;
   int128_t s = GetNumLeadingZeroesAssumingNonZero(v);
 
   // Normalize everything
+  // Make sure that v does not contain leading zeroes
   v = v << s;
+  // vn1 is the higher 64 bits of normalized-by-scale v
   vn1 = v >> 64;
+  // vn0 is the lower 64 bits of normalized-by-scale v
   vn0 = v & 0xFFFFFFFFFFFFFFFF;
 
+  // un = {un3, un2, un1, un0} (128-bit each)
+  // u1 (64-bit) << 10
+  // u0 (64-bit) >> (128 - 10)
+  // E.g., assume 8-bit case and s = 2
+  // {0b00010111, 0b10101011} 
+  // u1 << 2 is 0b01011100
+  // u0 << 6 is 0b00000010
+  // u1 << 2 | u0 >> 6 is 0b01011110 (Pick 128-bit top most bit after normalized)
+  // ~s - 1 >> 127 is a write mask when the MSB of s is 1
+  // E.g., ~0b01011010 - 0b1 >> 7 = 0b10100101 - 0b1 >> 7 = 0b10100100 >> 7 = 0b11111111
+  // If not 1, un32 is zero
   un32 = (u1 << s) | ((u0 >> (128 - s)) & ((-s) >> 127));
+  // un10 is the remaining bit of u0 after normalized
   un10 = u0 << s;
+  // un1 gets only the higher 64-bit of u10
   un1 = un10 >> 64;
+  // un0 gets only the lower 64-bit of un10
   un0 = un10 & 0xFFFFFFFFFFFFFFFF;
 
-  q1 = un32 / vn1;
-  rhat = un32 - q1 * vn1;
+  // TODO(Guide): What if vn = 0?
+  if (vn1 == 0) {
+    throw std::runtime_error("Divided by 0");
+  }
 
+  // q1, rhat is a top 128-bit quotient and its remainder
+  // q1 = un32 / vn1
+  q1 = un32 / vn1;
+  // rhat = un32 % vn1
+  rhat = un32 - (q1 * vn1);
+
+  // Long division for the higher bits
   do {
-    if ((q1 >= b) || (q1 * vn0 > b * rhat + un1)) {
+    // If still can divide since q1 >= b or
+    // the lower bit part is sufficient to continue the division 
+    if ((q1 >= b) || ((q1 * vn0) > (b * rhat) + un1)) {
       q1 = q1 - 1;
       rhat = rhat + vn1;
     } else {
@@ -631,11 +743,14 @@ uint128_t Decimal::CalculateUnsignedLongDivision128(uint128_t u1, uint128_t u0, 
     }
   } while (rhat < b);
 
-  un21 = un32 * b + un1 - q1 * v;
-
+  // un21 = un321 - (q1 * v)
+  un21 = (un32 * b) + un1 - (q1 * v);
+  // q0 = un21 / vn1
   q0 = un21 / vn1;
+  // rhat = un21 % vn1
   rhat = un21 - q0 * vn1;
 
+  // Long division for the lower bit
   do {
     if ((q0 >= b) || (q0 * vn0 > b * rhat + un0)) {
       q0 = q0 - 1;
@@ -645,6 +760,7 @@ uint128_t Decimal::CalculateUnsignedLongDivision128(uint128_t u1, uint128_t u0, 
     }
   } while (rhat < b);
 
+  // Merge hi and lo quotients using base
   return q1 * b + q0;
 }
 

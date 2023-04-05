@@ -231,7 +231,7 @@ class Decimal {
     return new_scale;
   }
 
- private:
+//  private:
   // The encoded decimal value
   NativeType value_;
 
@@ -278,11 +278,11 @@ class Decimal {
   void DivideByConstantPowerOfTen128(uint32_t exponent);
 
   /**
-   *
-   * @param u1
-   * @param u0
-   * @param v
-   * @return
+   * Divide a 256-bit unsigned integer by a 128-bit integer
+   * @param u1 The first 128 bits of dividend
+   * @param u0 The second 128 bits of divided
+   * @param v The divisor
+   * @return The result of the division
    */
   uint128_t CalculateUnsignedLongDivision128(uint128_t u1, uint128_t u0, uint128_t v);
 
