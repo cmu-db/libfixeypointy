@@ -4,7 +4,11 @@
 
 namespace libfixeypointy {
 
+// TODO: Test case for the overflow verification
 Decimal::Decimal(std::string input, ScaleType *scale) : value_(0) {
+  // Check whether the input is empty or not
+  // If it is empty, then we should return 0
+  // TODO: Why don't return 0?
   if (input.empty()) {
     throw std::runtime_error("Invalid empty input string '" + input + "'");
   }
@@ -43,7 +47,8 @@ Decimal::Decimal(std::string input, ScaleType *scale) : value_(0) {
   }
 
   // Check overflow
-  if (integral_digits + fractional_digits > 38) {
+  // TODO: What should be a hard constraint (38 digits or 128 bits)?
+  if (integral_digits + fractional_digits > MAX_SCALE) {
     throw std::runtime_error("Overflow > 38 digits");
   }
 
@@ -171,7 +176,6 @@ Decimal::Decimal(const std::string &input, const ScaleType &scale) : value_(0) {
     for (ScaleType i = 0; i < scale - 1; i++) {
       value_ *= 10;
     }
-    // TODO(Guide): Can be overflowed, fixed this
     if (is_negative) {
       value_ = -value_;
     }
@@ -186,7 +190,6 @@ Decimal::Decimal(const std::string &input, const ScaleType &scale) : value_(0) {
     for (ScaleType i = 0; i < scale - 1; i++) {
       value_ *= 10;
     }
-    // TODO(Guide): Can be overflowed, fixed this
     if (is_negative) {
       value_ = -value_;
     }
@@ -204,7 +207,6 @@ Decimal::Decimal(const std::string &input, const ScaleType &scale) : value_(0) {
       for (ScaleType j = i; j < scale; j++) {
         value_ *= 10;
       }
-      // TODO(Guide): Can be overflowed, fixed this
       if (is_negative) {
         value_ = -value_;
       }

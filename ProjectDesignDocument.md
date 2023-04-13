@@ -109,3 +109,4 @@ PostgreSQL supports UDTs, which allow users to define and benchmark new types. A
 The following list are the potential future work we think there are interesting to be explored.
 - Improve `libfixeypointy` performance based on existing techniques in existing high-performance packages
 - Vectorization support
+- User manual
