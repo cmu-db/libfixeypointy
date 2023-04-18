@@ -12,7 +12,7 @@
 namespace libfixeypointy {
 
 /**
- * 256-bit magic numbers for division with powers of 10.
+ * 256-bit magic numbers for division with scales from 0 to 38.
  * Each 256-bit number is represented as four uint32_t integers.
  */
 static constexpr uint128_t MAGIC_ARRAY[39][4] = {

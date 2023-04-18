@@ -80,75 +80,59 @@ Decimal compute_result(DemoDecimal &decimal1, DemoDecimal &decimal2, const std::
 }
 
 int main(UNUSED_ATTRIBUTE int argc, UNUSED_ATTRIBUTE char *argv[]) {
-  // std::string equals;
-  // bool has_equals = false;
-  // DemoDecimal expected;
+  std::string equals;
+  bool has_equals = false;
+  DemoDecimal expected;
 
-  // for (std::string line; std::getline(std::cin, line);) {
-  //   std::transform(line.begin(), line.end(), line.begin(), ::tolower);
-  //   if (line == "quit") {
-  //     break;
-  //   } else if (line.empty()) {
-  //     continue;
-  //   }
+  for (std::string line; std::getline(std::cin, line);) {
+    std::transform(line.begin(), line.end(), line.begin(), ::tolower);
+    if (line == "quit") {
+      break;
+    } else if (line.empty()) {
+      continue;
+    }
 
-  //   // INPUT FORMAT: <DECIMAL>:<SCALE> <OP> <DECIMAL>:<SCALE> = <DECIMAL>:<SCALE>
-  //   std::stringstream input(line);
+    // INPUT FORMAT: <DECIMAL>:<SCALE> <OP> <DECIMAL>:<SCALE> = <DECIMAL>:<SCALE>
+    std::stringstream input(line);
 
-  //   // Decimal #1
-  //   auto val1 = parse_decimal(input);
+    // Decimal #1
+    auto val1 = parse_decimal(input);
 
-  //   // Operator
-  //   std::string op;
-  //   input >> op;
+    // Operator
+    std::string op;
+    input >> op;
 
-  //   // Decimal #2
-  //   auto val2 = parse_decimal(input);
+    // Decimal #2
+    auto val2 = parse_decimal(input);
 
-  //   // Equals
+    // Equals
 
-  //   has_equals = false;
-  //   input >> equals;
-  //   if (!equals.empty()) {
-  //     if (equals != "=") {
-  //       throw std::invalid_argument("Invalid operation format '" + line + "'");
-  //     }
-  //     // Expected Result Decimal
-  //     expected = parse_decimal(input);
-  //     has_equals = true;
-  //   }
+    has_equals = false;
+    input >> equals;
+    if (!equals.empty()) {
+      if (equals != "=") {
+        throw std::invalid_argument("Invalid operation format '" + line + "'");
+      }
+      // Expected Result Decimal
+      expected = parse_decimal(input);
+      has_equals = true;
+    }
 
-  //   // Execute!
-  //   uint32_t new_scale = Decimal::MatchScales(val1.decimal, val2.decimal, val1.orig_scale, val2.orig_scale);
-  //   auto result = compute_result(val1, val2, op, new_scale);
-  //   //    std::cout << "Decimal1: " <<  << " [ORIG:" << val1.orig_value << "]" << std::endl;
-  //   //    std::cout << "Decimal2: " << val2.decimal.ToString(val2.orig_scale) << " [ORIG:" << val2.orig_value << "]" <<
-  //   //    std::endl;
-  //   std::cout << ">>> " << val1.decimal->ToString(new_scale) << " " << op << " " << val2.decimal->ToString(new_scale)
-  //             << " = " << result.ToString(new_scale) << " ";
-  //   if (has_equals) {
-  //     //      [EXPECTED:" << expected.orig_value << "]" << std::endl;
-  //   }
-  //   std::cout << std::endl;
+    // Execute!
+    uint32_t new_scale = Decimal::MatchScales(val1.decimal, val2.decimal, val1.orig_scale, val2.orig_scale);
+    auto result = compute_result(val1, val2, op, new_scale);
+    //    std::cout << "Decimal1: " <<  << " [ORIG:" << val1.orig_value << "]" << std::endl;
+    //    std::cout << "Decimal2: " << val2.decimal.ToString(val2.orig_scale) << " [ORIG:" << val2.orig_value << "]" <<
+    //    std::endl;
+    std::cout << ">>> " << val1.decimal->ToString(new_scale) << " " << op << " " << val2.decimal->ToString(new_scale)
+              << " = " << result.ToString(new_scale) << " ";
+    if (has_equals) {
+      //      [EXPECTED:" << expected.orig_value << "]" << std::endl;
+    }
+    std::cout << std::endl;
 
-  //   //    break;
-  // }
-
-  Decimal test = Decimal(330);
-  uint128_t v = 0;
-  v = 1;
-  v <<= 64;
-  v |= 1;
-  uint128_t u1 = 0;
-  u1 = 1;
-  uint128_t u0 = 0;
-  u0 = 1;
-  u0 <<= 64;
-  printf("u1=%llx u0=%llx v=%llx\n", (unsigned long long)u1, (unsigned long long)u0, (unsigned long long)v);
-  uint128_t div = test.CalculateUnsignedLongDivision128(u1, u0, v);
-  uint64_t hi = div >> 64;
-  uint64_t lo = div % 0xFFFFFFFFFFFFFFFF;
-  std::cout << hi << " " << lo << std::endl;
+    //    break;
+  }
 
   return 0;
 }
