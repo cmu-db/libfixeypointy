@@ -13,53 +13,61 @@
 
 #define UNUSED_ATTRIBUTE __attribute__((unused))
 
-void AdditionBench() {
-  int iterations = 1000000;
-  int precision = 128;
+void Bench(const std::string &mode, const int trials, const int skip, const int iterations, const int precision,
+           const std::string &op1, const std::string &op2) {
+  auto t1 = std::chrono::high_resolution_clock::now();
+  auto t2 = std::chrono::high_resolution_clock::now();
   int base = 10;
 
-  mpf_class gmp_ret("1.0", precision, base);
-  mpf_class gmp_add("0.000000000000001", precision, base);
+  for (int trial = 0; trial < trials; ++trial) {
+    mpf_class ret(op1, precision, base);
+    mpf_class op(op2, precision, base);
 
-  auto t1 = std::chrono::high_resolution_clock::now();
-  for (int i = 0; i < iterations; ++i) {
-    gmp_ret += gmp_add;
+    if (mode == "add") {
+      t1 = std::chrono::high_resolution_clock::now();
+      for (int i = 0; i < iterations; ++i) {
+        ret += op;
+      }
+      t2 = std::chrono::high_resolution_clock::now();
+    } else if (mode == "sub") {
+      t1 = std::chrono::high_resolution_clock::now();
+      for (int i = 0; i < iterations; ++i) {
+        ret -= op;
+      }
+      t2 = std::chrono::high_resolution_clock::now();
+    } else if (mode == "mlt") {
+      t1 = std::chrono::high_resolution_clock::now();
+      for (int i = 0; i < iterations; ++i) {
+        ret *= op;
+      }
+      t2 = std::chrono::high_resolution_clock::now();
+    } else if (mode == "div") {
+      t1 = std::chrono::high_resolution_clock::now();
+      for (int i = 0; i < iterations; ++i) {
+        ret /= op;
+      }
+      t2 = std::chrono::high_resolution_clock::now();
+    } else {
+      std::cout << "Unsupported benchmark mode" << std::endl;
+    }
+
+    if (trial >= skip) {
+      auto duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
+      std::cout << duration.count() << std::endl;
+    }
   }
-  auto t2 = std::chrono::high_resolution_clock::now();
-  auto gmp_duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
-
-  std::cout << "GMP: " << gmp_duration.count() << " us ";
-  std::cout << std::setprecision(20);
-  std::cout << gmp_ret.get_d() << std::endl;
-}
-
-void MultiplicationBench() {
-  int iterations = 1000000;
-  int precision = 128;
-  int base = 10;
-
-  mpf_class gmp_ret("1.0000", precision, base);
-  mpf_class gmp_mult("1.00001", precision, base);
-  // mpf_class gmp_div("12", precision, base);
-
-  auto t1 = std::chrono::high_resolution_clock::now();
-  for (int i = 0; i < iterations; ++i) {
-    gmp_ret *= gmp_mult;
-  }
-  auto t2 = std::chrono::high_resolution_clock::now();
-  auto gmp_duration = std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1);
-
-  std::cout << "GMP: " << gmp_duration.count() << " us ";
-  std::cout << std::setprecision(20);
-  std::cout << gmp_ret.get_d() << std::endl;
 }
 
 int main(UNUSED_ATTRIBUTE int argc, UNUSED_ATTRIBUTE char *argv[]) {
-  int trials = 5;
-  for (int trial = 1; trial <= trials; ++trial) {
-    AdditionBench();
-    // MultiplicationBench();
-  }
+  std::string mode = argv[1];
+  int trials = atoi(argv[2]);
+  int skip = atoi(argv[3]);
+  int iterations = atoi(argv[4]);
+  int precision = atoi(argv[5]);
+  std::string op1 = argv[6];
+  std::string op2 = argv[7];
+
+  Bench(mode, trials, skip, iterations, precision, op1, op2);
 
   return 0;
 }
