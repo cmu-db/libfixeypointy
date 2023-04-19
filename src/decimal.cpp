@@ -315,13 +315,16 @@ void Decimal::Divide(const Decimal &denominator, const ScaleType &scale) {
   }
 
   if (half_words_result[2] == 0 && half_words_result[3] == 0) {
+    // std::cout << "case 2" << std::endl;
     // 2. If overflow, divide by the denominator with multi-word 256-bit division.
     value_ = half_words_result[0] | (half_words_result[1] << 64);
     UnsignedDivideConstant128Bit(constant);
   } else if (MAGIC_CUSTOM_256BIT_CONSTANT_DIVISION.count(constant) > 0) {
     // 3. If no overflow, and have magic numbers, use magic numbers.
+    std::cout << "case 3" << std::endl;
     value_ = UnsignedMagicDivideConstantNumerator256Bit(half_words_result, constant);
   } else {
+    std::cout << "case 4" << std::endl;
     // 4. If no overflow, and no magic numbers, divide by the denominator with 128-bit division.
     value_ = CalculateUnsignedLongDivision128(half_words_result[2] | (half_words_result[3] << 64),
                                               half_words_result[0] | (half_words_result[1] << 64), constant);
@@ -446,6 +449,7 @@ void Decimal::UnsignedDivideConstant128Bit(uint128_t constant) {
 
   // 3. Magic Number division.
   {
+    // std::cout << "magic num" << std::endl;
     // Calculate 256-bit multiplication result.
     uint128_t half_words_result[4];
     {

@@ -1,23 +1,36 @@
 BUILD_DIR=../build
 BENCH_DIR=benchmark
+BENCH_INPUT=../util/bench_reg
+BENCH_MAGIC_INPUT=../util/bench_magic
+BENCH_ITER=10000 # repeat operation multiples times to bring it to microsecond level
+GMP_PRECISION=128
+
+# output file naming
+GMP_PREFIX=gmp
+LIB_PREFIX=lib
+MAGIC_PREFIX=magic
 
 cd $BUILD_DIR
 make -j$(nproc) bench-gmp bench-lib
 rm $BENCH_DIR/*.csv
 
-RUNS=20 # run each benchmark several
-SKIP=4 # skip stats of first n runs for warm cache
+RUNS=10 # run each benchmark several
+SKIP=2 # skip stats of first n runs for warm cache
 
-GMP_PREFIX=gmp
-# EXAMPLE: add mode, 10 repeated runs, skip first 2 run stats (cache), 1000000 iterations, 128bit precision, 1.0000 + 1.00001
-./bench-gmp add $RUNS $SKIP 1000000 128 1.000000000000000 0.000000000000001 > $BENCH_DIR/$GMP_PREFIX-add.csv
-./bench-gmp sub $RUNS $SKIP 1000000 128 1.000000000000000 0.000000000000001 > $BENCH_DIR/$GMP_PREFIX-sub.csv
-./bench-gmp mlt $RUNS $SKIP 1000000 128 1.000000000000000 1.00001 > $BENCH_DIR/$GMP_PREFIX-mlt.csv
-./bench-gmp div $RUNS $SKIP 1000000 128 100.00000 1.00001 > $BENCH_DIR/$GMP_PREFIX-div.csv
+# GMP
+./bench-gmp add $RUNS $SKIP $GMP_PRECISION $BENCH_ITER $BENCH_INPUT > $BENCH_DIR/$GMP_PREFIX-add.csv
+./bench-gmp sub $RUNS $SKIP $GMP_PRECISION $BENCH_ITER $BENCH_INPUT > $BENCH_DIR/$GMP_PREFIX-sub.csv
+./bench-gmp mlt $RUNS $SKIP $GMP_PRECISION $BENCH_ITER $BENCH_INPUT > $BENCH_DIR/$GMP_PREFIX-mlt.csv
+./bench-gmp div $RUNS $SKIP $GMP_PRECISION $BENCH_ITER $BENCH_INPUT > $BENCH_DIR/$GMP_PREFIX-div.csv
 
-# Benchmark script for Libfixeypointy
-LIB_PREFIX=lib
-./bench-lib add $RUNS $SKIP 1000000 15 1.000000000000000 0.000000000000001 > $BENCH_DIR/$LIB_PREFIX-add.csv
-./bench-lib sub $RUNS $SKIP 1000000 15 1.000000000000000 0.000000000000001 > $BENCH_DIR/$LIB_PREFIX-sub.csv
-./bench-lib mlt $RUNS $SKIP 1000000 15 1.000000000000000 1.00001 > $BENCH_DIR/$LIB_PREFIX-mlt.csv
-./bench-lib div $RUNS $SKIP 1000000 15 100.00000 1.00001 > $BENCH_DIR/$LIB_PREFIX-div.csv
+# Libfixeypointy
+./bench-lib add $RUNS $SKIP $BENCH_ITER $BENCH_INPUT > $BENCH_DIR/$LIB_PREFIX-add.csv
+./bench-lib sub $RUNS $SKIP $BENCH_ITER $BENCH_INPUT > $BENCH_DIR/$LIB_PREFIX-sub.csv
+./bench-lib mlt $RUNS $SKIP $BENCH_ITER $BENCH_INPUT > $BENCH_DIR/$LIB_PREFIX-mlt.csv
+./bench-lib div $RUNS $SKIP $BENCH_ITER $BENCH_INPUT > $BENCH_DIR/$LIB_PREFIX-div.csv
+
+# # Benchmark magic mult and div
+./bench-gmp mlt $RUNS $SKIP $GMP_PRECISION $BENCH_ITER $BENCH_MAGIC_INPUT > $BENCH_DIR/$GMP_PREFIX-$MAGIC_PREFIX-mlt.csv
+./bench-gmp div $RUNS $SKIP $GMP_PRECISION $BENCH_ITER $BENCH_MAGIC_INPUT > $BENCH_DIR/$GMP_PREFIX-$MAGIC_PREFIX-div.csv
+./bench-lib mlt $RUNS $SKIP $BENCH_ITER $BENCH_MAGIC_INPUT > $BENCH_DIR/$LIB_PREFIX-$MAGIC_PREFIX-mlt.csv
+./bench-lib div $RUNS $SKIP $BENCH_ITER $BENCH_MAGIC_INPUT > $BENCH_DIR/$LIB_PREFIX-$MAGIC_PREFIX-div.csv
