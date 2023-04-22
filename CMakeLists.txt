@@ -56,6 +56,7 @@ add_subdirectory(
 # Compiler flags.
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -fPIC -Wall -Wextra -Werror -march=native")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -ggdb -fsanitize=address -fno-omit-frame-pointer -fno-optimize-sibling-calls")
+set(CMAKE_CXX_FLAGS_BENCH "${CMAKE_CXX_FLAGS_BENCH} -O3 -fPIC")
 
 set(BUSTUB_SRC_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src)
 include_directories(

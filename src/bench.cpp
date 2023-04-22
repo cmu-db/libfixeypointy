@@ -70,6 +70,12 @@ void Bench(const std::string &mode, const int trials, const int skip, const int 
         std::cout << "Unsupported benchmark mode" << std::endl;
       }
 
+      // cleanup
+      for (int i = 0; i < iterations; ++i) {
+        delete op1_arr[i];
+        delete op2_arr[i];
+      }
+
       auto init_duration = std::chrono::duration_cast<std::chrono::microseconds>(t_init_end - t_init_start);
       auto op_duration = std::chrono::duration_cast<std::chrono::microseconds>(t_op_end - t_op_start);
       init_time += init_duration.count();
