@@ -12,6 +12,7 @@ BENCH_MAGIC_INPUT=$PROJECT_DIR/build/benchmark/bench_magic
 
 # Build Benchmark Driver
 cd $BUILD_DIR
+mkdir $BENCH_DIR
 rm $BENCH_DIR/*.csv
 cmake -DCMAKE_BUILD_TYPE=Bench ..
 make clean
