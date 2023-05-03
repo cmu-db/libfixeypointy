@@ -109,3 +109,6 @@ add_executable(bench-gmp src/bench_gmp.cpp)
 target_include_directories(bench-gmp PUBLIC /usr/local/include)
 target_link_directories(bench-gmp PUBLIC /usr/local/lib)
 target_link_libraries(bench-gmp PUBLIC gmp gmpxx)
+
+# Native Benchmarks
+add_executable(bench-native src/bench_native.cpp)
