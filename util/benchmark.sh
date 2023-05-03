@@ -15,7 +15,6 @@ cd $BUILD_DIR
 mkdir $BENCH_DIR
 rm $BENCH_DIR/*.csv
 cmake -DCMAKE_BUILD_TYPE=Bench ..
-cd $PROJECT_DIR
 make clean
 make -j$(nproc) bench-lib bench-native bench-gmp
 

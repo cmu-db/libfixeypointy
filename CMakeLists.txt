@@ -106,8 +106,8 @@ target_link_libraries(bench-lib libfixeypointy)
 
 # GMP Benchmarks
 add_executable(bench-gmp src/bench_gmp.cpp)
-target_include_directories(bench-gmp PUBLIC /usr/local/include)
-target_link_directories(bench-gmp PUBLIC /usr/local/lib)
+target_include_directories(bench-gmp PUBLIC /usr/include)
+target_link_directories(bench-gmp PUBLIC /usr/lib)
 target_link_libraries(bench-gmp PUBLIC gmp gmpxx)
 
 # Native Benchmarks
