@@ -8,7 +8,7 @@ import java.math.RoundingMode;
  * 1. revert result as if test line has not been executed
  * 2. log overflow to output
  */
-class BenchJava {
+class JavaBigDecimal {
   public static void Bench(String mode, int trials, int skip, int iterations, String bench_file) {
     long t_op_start = System.nanoTime();
     long t_op_end = System.nanoTime();

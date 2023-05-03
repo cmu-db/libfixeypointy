@@ -1062,4 +1062,14 @@ Decimal::NativeType Decimal::DivideByMagicNumbers256(const uint128_t (&a)[4], co
   return (final_result);
 }
 
+int Decimal::Compare(const Decimal::NativeType &that) {
+  int result = 1;
+  value_ -= that;
+  if (value_ == 0)
+    result = 0;
+  else if (value_ < 0)
+    result = -1;
+  return result;
+}
+
 }  // namespace libfixeypointy

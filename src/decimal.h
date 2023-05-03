@@ -42,7 +42,8 @@ class Decimal {
   /**
    * Convert an input string into a decimal representation.
    * @param input       The input string to convert.
-   *                    If the input string has more digits than the specified scale, the value is rounded up using rounding to odd.
+   *                    If the input string has more digits than the specified scale, the value is rounded up using
+   * rounding to odd.
    * @param scale       Number of significant digits.
    *                    The scale must be <= MAX_SCALE.
    */
@@ -121,24 +122,6 @@ class Decimal {
   const Decimal operator-(const NativeType &that) { return Decimal(this->value_ - that); }
 
   /**
-   * compare two Decimal value.
-   * @warning The other decimal value MUST be of the same scale.
-   * @param that The value to compare.
-   * @return bigger:1, same:0, smaller:-1
-   */
-  const int Compare(const NativeType &that)
-  {
-    int result = 1;
-    value_ -= that;
-    if (value_ == 0)
-      result = 0;
-    else if (value_ < 0)
-      result = -1;
-
-    return result;
-  }
-
-  /**
    * Get the string representation of the current decimal. Requires knowing the scale.
    *
    * @param scale The scale of the current decimal. This must be accurate!
@@ -191,11 +174,21 @@ class Decimal {
   /**
    * Divide the current decimal by the given decimal.
    * The result is in the numerator's (current decimal's) scale.
-   * The division methods are 
+   * The division methods are
    * @param denominator             The decimal to divide by.
    * @param scale       The scale of the denominator.
    */
   void Divide(const Decimal &denominator, const ScaleType &scale);
+
+  /**
+   * Compare two decimal values.
+   * @warning The other decimal value must be of the same scale.
+   * @param that The value to be compared.
+   * @return  Return 1 if the decimal is larger than the value to be compared
+   *          Return 0 if the decimal is equal to the value to be compared
+   *          Return -1 if the decimal is smaller than the value to be compared
+   */
+  int Compare(const NativeType &that);
 
   /**
    * Multiple the current decimal by a constant integer value.
@@ -250,7 +243,7 @@ class Decimal {
     return new_scale;
   }
 
-//  private:
+  //  private:
   // The encoded decimal value
   NativeType value_;
 
@@ -310,7 +303,7 @@ class Decimal {
    * 64-bit chunks.
    * @param half_words_a The array of 64 bits chunks of the first operand
    * @param half_words_b The array of 64 bits chunks of the second operand
-   * @param half_words_result The array of result 
+   * @param half_words_result The array of result
    * @param m The size of the half_words_a
    * @param n The size of the half_words_b
    */
