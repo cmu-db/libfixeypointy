@@ -1,5 +1,6 @@
 import java.io.*;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 /*
  * Overflow behavior:
@@ -54,7 +55,7 @@ class BenchJava {
           } else if (mode.equals("div")) {
             t_op_start = System.nanoTime();
             for (int i = 0; i < iterations; ++i) {
-              op1_arr[i].divide(op2_arr[i]);
+              op1_arr[i].divide(op2_arr[i], RoundingMode.DOWN);
             }
             t_op_end = System.nanoTime();
           } else {
