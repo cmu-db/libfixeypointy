@@ -15,8 +15,12 @@ cd $BUILD_DIR
 mkdir $BENCH_DIR
 rm $BENCH_DIR/*.csv
 cmake -DCMAKE_BUILD_TYPE=Bench ..
+cd $PROJECT_DIR
 make clean
 make -j$(nproc) bench-gmp bench-lib
+
+cp $PROJECT_DIR/bench-lib $BUILD_DIR/
+cp $PROJECT_DIR/bench-gmp $BUILD_DIR/
 
 # Generate benchmarks
 BENCH_LEN=1000 # length of random sequence of operations
@@ -32,7 +36,17 @@ SKIP=2 # skip stats of first n runs for warm cache
 # benchmark output file naming
 GMP_PREFIX=gmp
 LIB_PREFIX=lib
+PY_PREFIX=pyDecimal
 MAGIC_PREFIX=magic
+
+# python Decimal
+python3 $UTIL_DIR/bench_Decimal.py -m add -t $RUNS -s $SKIP -i $BENCH_ITER -b $BENCH_INPUT > $BENCH_DIR/$PY_PREFIX-add.csv
+python3 $UTIL_DIR/bench_Decimal.py -m sub -t $RUNS -s $SKIP -i $BENCH_ITER -b $BENCH_INPUT > $BENCH_DIR/$PY_PREFIX-sub.csv
+python3 $UTIL_DIR/bench_Decimal.py -m mlt -t $RUNS -s $SKIP -i $BENCH_ITER -b $BENCH_INPUT > $BENCH_DIR/$PY_PREFIX-mlt.csv
+python3 $UTIL_DIR/bench_Decimal.py -m div -t $RUNS -s $SKIP -i $BENCH_ITER -b $BENCH_INPUT > $BENCH_DIR/$PY_PREFIX-div.csv
+
+python3 $UTIL_DIR/bench_Decimal.py -m mlt -t $RUNS -s $SKIP -i $BENCH_ITER -b $BENCH_MAGIC_INPUT > $BENCH_DIR/$PY_PREFIX-$MAGIC_PREFIX-mlt.csv
+python3 $UTIL_DIR/bench_Decimal.py -m div -t $RUNS -s $SKIP -i $BENCH_ITER -b $BENCH_MAGIC_INPUT > $BENCH_DIR/$PY_PREFIX-$MAGIC_PREFIX-div.csv
 
 # GMP
 $BUILD_DIR/bench-gmp add $RUNS $SKIP $GMP_PRECISION $BENCH_ITER $BENCH_INPUT > $BENCH_DIR/$GMP_PREFIX-add.csv
@@ -52,3 +66,4 @@ $BUILD_DIR/bench-gmp div $RUNS $SKIP $GMP_PRECISION $BENCH_ITER $BENCH_MAGIC_INP
 
 $BUILD_DIR/bench-lib mlt $RUNS $SKIP $BENCH_ITER $BENCH_MAGIC_INPUT > $BENCH_DIR/$LIB_PREFIX-$MAGIC_PREFIX-mlt.csv
 $BUILD_DIR/bench-lib div $RUNS $SKIP $BENCH_ITER $BENCH_MAGIC_INPUT > $BENCH_DIR/$LIB_PREFIX-$MAGIC_PREFIX-div.csv
+
