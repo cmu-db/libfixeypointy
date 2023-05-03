@@ -42,7 +42,7 @@ class Decimal {
   /**
    * Convert an input string into a decimal representation.
    * @param input       The input string to convert.
-   *                    If the input string has more digits than the specified scale, the value is rounded up.
+   *                    If the input string has more digits than the specified scale, the value is rounded up using rounding to odd.
    * @param scale       Number of significant digits.
    *                    The scale must be <= MAX_SCALE.
    */
@@ -173,6 +173,7 @@ class Decimal {
   /**
    * Divide the current decimal by the given decimal.
    * The result is in the numerator's (current decimal's) scale.
+   * The division methods are 
    * @param denominator             The decimal to divide by.
    * @param scale       The scale of the denominator.
    */
@@ -231,7 +232,7 @@ class Decimal {
     return new_scale;
   }
 
- private:
+//  private:
   // The encoded decimal value
   NativeType value_;
 
@@ -278,31 +279,32 @@ class Decimal {
   void DivideByConstantPowerOfTen128(uint32_t exponent);
 
   /**
-   *
-   * @param u1
-   * @param u0
-   * @param v
-   * @return
+   * Divide a 256-bit unsigned integer by a 128-bit integer
+   * @param u1 The first 128 bits of dividend
+   * @param u0 The second 128 bits of dividend
+   * @param v The divisor
+   * @return The result of the division
    */
   uint128_t CalculateUnsignedLongDivision128(uint128_t u1, uint128_t u0, uint128_t v);
 
   /**
-   *
-   * @param half_words_a
-   * @param half_words_b
-   * @param half_words_result
-   * @param m
-   * @param n
+   * Calculate product of two unsigned intergers of arbitrary size by applying grade-school style multiplication with
+   * 64-bit chunks.
+   * @param half_words_a The array of 64 bits chunks of the first operand
+   * @param half_words_b The array of 64 bits chunks of the second operand
+   * @param half_words_result The array of result 
+   * @param m The size of the half_words_a
+   * @param n The size of the half_words_b
    */
   void CalculateMultiWordProduct128(const uint128_t *const half_words_a, const uint128_t *const half_words_b,
                                     uint128_t *half_words_result, uint32_t m, uint32_t n) const;
 
   /**
-   *
-   * @param a
-   * @param b
-   * @param algo
-   * @param magic_p
+   * Divide a 256-bit integer with another 256-bit integer using a magic number method
+   * @param a The 256-bit dividend as 4 chunks of 64-bit integers
+   * @param b The 256-bit magic number as 4 chunks of 64-bit integers
+   * @param algo The size of the magic number
+   * @param magic_p The number of digits of a * b
    * @return
    */
   NativeType DivideByMagicNumbers256(const uint128_t (&a)[4], const uint128_t (&b)[4], AlgorithmType algo,

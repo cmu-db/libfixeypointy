@@ -6,8 +6,6 @@
 cmake-build-debug
 venv
 build
-
-# External Verifications
 java-verify
 
 # Prerequisites
