@@ -65,13 +65,15 @@ void Bench(const std::string &mode, const int trials, const int skip, const int 
         std::cout << "Unsupported benchmark mode" << std::endl;
       }
 
-      auto init_duration = std::chrono::duration_cast<std::chrono::microseconds>(t_init_end - t_init_start);
-      auto op_duration = std::chrono::duration_cast<std::chrono::microseconds>(t_op_end - t_op_start);
+      auto init_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(t_init_end - t_init_start);
+      auto op_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(t_op_end - t_op_start);
       init_time += init_duration.count();
       op_time += op_duration.count();
     }
 
     if (trial >= skip) {
+      init_time /= 1000;
+      op_time /= 1000;
       std::cout << init_time << "," << op_time << std::endl;
     }
   }
