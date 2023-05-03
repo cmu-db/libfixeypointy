@@ -969,16 +969,16 @@ void _CalculateMultiWordProduct128_2_2(const uint128_t *const half_words_a, cons
   constexpr const uint128_t bottom_mask = (uint128_t{1} << 64) - 1;
   uint128_t t2 = (half_words_a[1] * half_words_b[0]);
   uint128_t t1 = (half_words_a[0] * half_words_b[0]);
-  t2 += (t1 >> 64);
+  // t2 += (t1 >> 64);
   half_words_result[0] = t1 & bottom_mask;
-  uint128_t t3 = (t2 >> 64);
-  t3 += (half_words_a[1] * half_words_b[1]);
-  t2 &= bottom_mask;
-  t2 += (half_words_a[0] * half_words_b[1]);
-  t3 += (t2 >> 64);
-  half_words_result[3] = (t3 >> 64);
+  // uint128_t t3 = (t2 >> 64);
+  // t3 += (half_words_a[1] * half_words_b[1]);
+  // t2 &= bottom_mask;
+  // t2 += (half_words_a[0] * half_words_b[1]);
+  // t3 += (t2 >> 64);
+  // half_words_result[3] = (t3 >> 64);
   half_words_result[1] = t2 & bottom_mask;
-  half_words_result[2] = t3 & bottom_mask;
+  // half_words_result[2] = t3 & bottom_mask;
 #endif
 }
 
