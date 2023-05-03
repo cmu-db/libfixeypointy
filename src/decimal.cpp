@@ -654,6 +654,7 @@ void Decimal::UnsignedDivideConstant128Bit(uint128_t constant) {
 
   // 3. Magic Number division.
   {
+    // std::cout << "magic num" << std::endl;
     // Calculate 256-bit multiplication result.
     // Compute a * magic
     uint128_t half_words_result[4];
