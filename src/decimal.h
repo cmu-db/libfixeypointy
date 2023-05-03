@@ -121,6 +121,24 @@ class Decimal {
   const Decimal operator-(const NativeType &that) { return Decimal(this->value_ - that); }
 
   /**
+   * compare two Decimal value.
+   * @warning The other decimal value MUST be of the same scale.
+   * @param that The value to compare.
+   * @return bigger:1, same:0, smaller:-1
+   */
+  const int Compare(const NativeType &that)
+  {
+    int result = 1;
+    value_ -= that;
+    if (value_ == 0)
+      result = 0;
+    else if (value_ < 0)
+      result = -1;
+
+    return result;
+  }
+
+  /**
    * Get the string representation of the current decimal. Requires knowing the scale.
    *
    * @param scale The scale of the current decimal. This must be accurate!
