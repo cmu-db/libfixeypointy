@@ -569,8 +569,6 @@ void Decimal::MultiplyAndSet(const Decimal &unsigned_input, ScaleType scale) {
   // 2. If overflow, divide by 10^scale using 256-bit magic number division.
   // 3. If no overflow, divide by 10^scale using 128-bit magic number division.
 
-  std::cout << unsigned_input.ToString(scale) << " " << (uint64_t)scale << std::endl;
-
   // Natively (i.e., regardless of scales) calculate the 256-bit multiplication result.
   uint128_t half_words_result[4];
   {
@@ -590,7 +588,6 @@ void Decimal::MultiplyAndSet(const Decimal &unsigned_input, ScaleType scale) {
   // Then, (a * b) * (10^2x) / 10^x = (a * b) * 10^x
 
   if (half_words_result[2] == 0 && half_words_result[3] == 0) {
-    std::cout << "Not overflow" << std::endl;
     // TODO(Rohan): Optimize by sending in an array of half words
     // If no overflow, use the product directly
     value_ = half_words_result[0] | (half_words_result[1] << 64);
@@ -829,158 +826,21 @@ void Decimal::CalculateMultiWordProduct128(const uint128_t *const half_words_a, 
   }
 }
 
-#define V7
-
 void _CalculateMultiWordProduct128_2_2(const uint128_t *const half_words_a, const uint128_t *const half_words_b,
                                        uint128_t *half_words_result) {
-#ifdef V1
-  uint128_t k, t;
-  uint32_t i, j;
   constexpr const uint128_t bottom_mask = (uint128_t{1} << 64) - 1;
-  constexpr const uint64_t m = 2;
-  constexpr const uint64_t n = 2;
-  // Initialize first m chunks with 0
-  for (i = 0; i < m; i++) half_words_result[i] = 0;
-  // For each chunk in b
-  for (j = 0; j < n; j++) {
-    k = 0;
-    // Match with all chunks in a
-    for (i = 0; i < m; i++) {
-      // Product + Old Value (half_words_result[i + j]) + Carry (k)
-      t = half_words_a[i] * half_words_b[j] + half_words_result[i + j] + k;
-      // Take only bottom 64 bits
-      half_words_result[i + j] = t & bottom_mask;
-      // Carry
-      k = t >> 64;
-    }
-    half_words_result[j + m] = k;
-  }
-#endif
-#ifdef V2
-  uint128_t k, t;
-  constexpr const uint128_t bottom_mask = (uint128_t{1} << 64) - 1;
-  // Initialize first m chunks with 0
-  half_words_result[0] = 0;
-  half_words_result[1] = 0;
-  // For each chunk in b
-  // j = 0
-  k = 0;
-  // j = 0, i = 0
-  t = half_words_a[0] * half_words_b[0] + half_words_result[0] + k;
-  half_words_result[0] = t & bottom_mask;
-  k = t >> 64;
-  // j = 0, i = 1
-  t = half_words_a[1] * half_words_b[0] + half_words_result[1] + k;
-  half_words_result[1] = t & bottom_mask;
-  k = t >> 64;
-  // End
-  half_words_result[2] = k;
-  // j = 1
-  k = 0;
-  // j = 1, i = 0
-  t = half_words_a[0] * half_words_b[1] + half_words_result[1] + k;
-  half_words_result[1] = t & bottom_mask;
-  k = t >> 64;
-  // j = 2, i = 1
-  t = half_words_a[1] * half_words_b[1] + half_words_result[2] + k;
-  half_words_result[2] = t & bottom_mask;
-  k = t >> 64;
-  // End
-  half_words_result[3] = k;
-#endif
-#ifdef V3
-  constexpr const uint128_t bottom_mask = (uint128_t{1} << 64) - 1;
-  // Initialize first m chunks with 0
-  half_words_result[0] = 0;
-  half_words_result[1] = 0;
-  half_words_result[0] = half_words_a[0] * half_words_b[0];
-  half_words_result[1] = half_words_a[1] * half_words_b[0] + (half_words_result[0] >> 64);
-  half_words_result[0] &= bottom_mask;
-  half_words_result[2] = (half_words_result[1] >> 64);
-  half_words_result[1] &= bottom_mask;
-  half_words_result[1] += half_words_a[0] * half_words_b[1];
-  half_words_result[2] = half_words_a[1] * half_words_b[1] + half_words_result[2] + (half_words_result[1] >> 64);
-  half_words_result[1] &= bottom_mask;
-  half_words_result[3] = (half_words_result[2] >> 64);
-  half_words_result[2] &= bottom_mask;
-#endif
-#ifdef V4
-  uint128_t t1, t2, t3, t4;
-  constexpr const uint128_t bottom_mask = (uint128_t{1} << 64) - 1;
-  // Initialize first m chunks with 0
-  t1 = 0;
-  t2 = 0;
-  t1 = half_words_a[0] * half_words_b[0];
-  t2 = half_words_a[1] * half_words_b[0] + (t1 >> 64);
-  t1 &= bottom_mask;
-  t3 = (t2 >> 64);
-  t2 &= bottom_mask;
-  t2 += half_words_a[0] * half_words_b[1];
-  t3 = half_words_a[1] * half_words_b[1] + t3 + (t2 >> 64);
-  t2 &= bottom_mask;
-  t4 = (t3 >> 64);
-  t3 &= bottom_mask;
-  half_words_result[0] = t1;
-  half_words_result[1] = t2;
-  half_words_result[2] = t3;
-  half_words_result[3] = t4;
-#endif
-#ifdef V5
-  uint128_t t1, t2, t3, t4;
-  constexpr const uint128_t bottom_mask = (uint128_t{1} << 64) - 1;
-  // Initialize first m chunks with 0
-  t1 = half_words_a[0] * half_words_b[0];
-  t2 = half_words_a[1] * half_words_b[0] + (t1 >> 64);
-  t1 &= bottom_mask;
-  t3 = (t2 >> 64);
-  t2 &= bottom_mask;
-  t2 += half_words_a[0] * half_words_b[1];
-  t3 = half_words_a[1] * half_words_b[1] + t3 + (t2 >> 64);
-  t2 &= bottom_mask;
-  t4 = (t3 >> 64);
-  t3 &= bottom_mask;
-  half_words_result[0] = t1;
-  half_words_result[1] = t2;
-  half_words_result[2] = t3;
-  half_words_result[3] = t4;
-#endif
-#ifdef V6
-  uint128_t t1 = 0, t2 = 0, t3 = 0, t4 = 0;
-  constexpr const uint128_t bottom_mask = (uint128_t{1} << 64) - 1;
-  // Initialize first m chunks with 0
-  t2 += (half_words_a[1] * half_words_b[0]);
-  t1 += (half_words_a[0] * half_words_b[0]);
+  uint128_t t2 = (half_words_a[1] * half_words_b[0]);
+  uint128_t t1 = (half_words_a[0] * half_words_b[0]);
   t2 += (t1 >> 64);
-  t1 &= bottom_mask;
-  t3 += (t2 >> 64);
+  half_words_result[0] = t1 & bottom_mask;
+  uint128_t t3 = (t2 >> 64);
   t3 += (half_words_a[1] * half_words_b[1]);
   t2 &= bottom_mask;
   t2 += (half_words_a[0] * half_words_b[1]);
   t3 += (t2 >> 64);
-  t4 += (t3 >> 64);
-  t2 &= bottom_mask;
-  t3 &= bottom_mask;
-
-  half_words_result[0] = t1;
-  half_words_result[1] = t2;
-  half_words_result[2] = t3;
-  half_words_result[3] = t4;
-#endif
-#ifdef V7
-  constexpr const uint128_t bottom_mask = (uint128_t{1} << 64) - 1;
-  uint128_t t2 = (half_words_a[1] * half_words_b[0]);
-  uint128_t t1 = (half_words_a[0] * half_words_b[0]);
-  // t2 += (t1 >> 64);
-  half_words_result[0] = t1 & bottom_mask;
-  // uint128_t t3 = (t2 >> 64);
-  // t3 += (half_words_a[1] * half_words_b[1]);
-  // t2 &= bottom_mask;
-  // t2 += (half_words_a[0] * half_words_b[1]);
-  // t3 += (t2 >> 64);
-  // half_words_result[3] = (t3 >> 64);
+  half_words_result[3] = (t3 >> 64);
   half_words_result[1] = t2 & bottom_mask;
-  // half_words_result[2] = t3 & bottom_mask;
-#endif
+  half_words_result[2] = t3 & bottom_mask;
 }
 
 /** Some code that was refactored out of Rohan's stuff. Here be dragons. */
