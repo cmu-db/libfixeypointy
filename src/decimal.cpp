@@ -7,7 +7,7 @@ namespace libfixeypointy {
 void _CalculateMultiWordProduct128_2_2(const uint128_t *const half_words_a, const uint128_t *const half_words_b,
                                        uint128_t *half_words_result);
 
-Decimal::Decimal(std::string input, ScaleType *scale) : value_(0) {
+Decimal::Decimal(const std::string &input, ScaleType *scale) : value_(0) {
   // Check whether the input is empty or not
   if (input.empty()) {
     throw std::runtime_error("Invalid empty input string '" + input + "'");

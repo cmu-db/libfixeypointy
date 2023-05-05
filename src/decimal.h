@@ -54,7 +54,7 @@ class Decimal {
    * @param input           The input string to convert.
    * @param[out] scale      The scale that the decimal was read with.
    */
-  Decimal(std::string input, ScaleType *scale);
+  Decimal(const std::string &input, ScaleType *scale);
 
   /**
    * @return The raw underlying encoded decimal value.
